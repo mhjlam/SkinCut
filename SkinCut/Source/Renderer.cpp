@@ -24,7 +24,7 @@
 
 #pragma warning(disable: 4996)
 
-constexpr auto KERNEL_SAMPLES = 9; // Must be equal to NUM_SAMPLES in SSSS.ps.hlsl;
+constexpr auto KERNEL_SAMPLES = 9; // Must be equal to NUM_SAMPLES in Subsurface.ps.hlsl;
 
 
 using namespace DirectX;
@@ -201,7 +201,7 @@ void Renderer::InitializeShaders()
 	shaderKelemen->SetDepthState(dsdesc, 1);
 
 	// initialize subsurface scattering shader
-	auto shaderScatter = std::make_shared<Shader>(mDevice, mContext, ShaderPath(L"Pass.vs.cso"), ShaderPath(L"SSSS.ps.cso"));
+	auto shaderScatter = std::make_shared<Shader>(mDevice, mContext, ShaderPath(L"Pass.vs.cso"), ShaderPath(L"Subsurface.ps.cso"));
 	bdesc = Shader::DefaultBlendDesc();
 	bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 	bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
@@ -612,7 +612,7 @@ void Renderer::RenderLighting(std::shared_ptr<Entity>& model, std::vector<std::s
 	cbps0->Specular = gConfig.Specularity;
 	cbps0->Bumpiness = gConfig.Bumpiness;
 	cbps0->Roughness = gConfig.Roughness;
-	cbps0->ScatterWidth = gConfig.Scattering;
+	cbps0->ScatterWidth = gConfig.Convolution;
 	cbps0->Translucency = gConfig.Translucency;
 	mContext->Unmap(shaderKelemen->mPixelBuffers[0].Get(), 0);
 	
@@ -695,7 +695,7 @@ void Renderer::RenderScattering()
 	HREXCEPT(mContext->Map(shaderScatter->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	CB_SCATTERING_PS* cbps = (CB_SCATTERING_PS*)mappedResource.pData;
 	cbps->FOVY = Camera::cFieldOfView;
-	cbps->Width = gConfig.Scattering;
+	cbps->Width = gConfig.Convolution;
 	cbps->Direction = XMFLOAT2(1,0);
 	for (uint8_t i = 0; i < mKernel.size(); ++i) {
 		cbps->Kernel[i] = mKernel[i];
@@ -730,7 +730,7 @@ void Renderer::RenderScattering()
 	HREXCEPT(mContext->Map(shaderScatter->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	cbps = (CB_SCATTERING_PS*)mappedResource.pData;
 	cbps->FOVY = Camera::cFieldOfView;
-	cbps->Width = gConfig.Scattering;
+	cbps->Width = gConfig.Convolution;
 	cbps->Direction = XMFLOAT2(0,1);
 	for (uint8_t i = 0; i < mKernel.size(); ++i) {
 		cbps->Kernel[i] = mKernel[i];

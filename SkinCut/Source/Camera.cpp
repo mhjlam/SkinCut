@@ -1,7 +1,6 @@
 #include "Camera.hpp"
 
 #include "ImGui/imgui.h"
-#include "SimpleJSON/JSON.h"
 
 
 using namespace DirectX;

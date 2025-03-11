@@ -419,6 +419,8 @@
     <ClInclude Include="Libraries\ImGui\imstb_rectpack.h" />
     <ClInclude Include="Libraries\ImGui\imstb_textedit.h" />
     <ClInclude Include="Libraries\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Libraries\nlohmann\json.hpp" />
+    <ClInclude Include="Libraries\nlohmann\json_fwd.hpp" />
     <ClInclude Include="libraries\SimpleJSON\JSON.h" />
     <ClInclude Include="libraries\SimpleJSON\JSONValue.h" />
     <ClInclude Include="Source\Application.hpp" />
@@ -710,7 +712,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Resources\Shaders\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Resources\Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Shaders\SSSS.ps.hlsl">
+    <FxCompile Include="Shaders\Subsurface.ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -852,7 +854,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="Resources\Models\InfiniteScanHead.obj">
+    <CopyFileToFolders Include="Resources\Models\Head.obj">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)Resources\Models</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)Resources\Models</DestinationFolders>

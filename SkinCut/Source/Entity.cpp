@@ -4,7 +4,6 @@
 #include <list>
 #include <unordered_map>
 
-#include "SimpleJSON/JSON.h"
 #include "DirectXTK/Inc/DDSTextureLoader.h"
 
 #include "Mesh.hpp"

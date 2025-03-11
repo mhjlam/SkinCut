@@ -202,7 +202,7 @@ namespace SkinCut
 		float Bumpiness;
 		float Roughness;
 		float Specularity;
-		float Scattering; // blur filter width
+		float Convolution; // blur filter width
 		float Translucency;
 	};
 

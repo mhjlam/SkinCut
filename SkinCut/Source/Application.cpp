@@ -9,7 +9,7 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
-#include "SimpleJSON/JSON.h"
+#include "nlohmann/json.hpp"
 
 #include "Light.hpp"
 #include "Camera.hpp"
@@ -94,62 +94,122 @@ bool Application::LoadConfig()
 	in.seekg(0, std::ios::beg);
 	in.read(&contents[0], contents.size());
 	in.close();
+	
+    auto root = nlohmann::json::parse(contents);
+	if (root.is_null()) { return false; }
 
-	auto data = std::unique_ptr<JSONValue>(JSON::Parse(contents.c_str()));
-	if (!data || !data->IsObject()) return false;
-	JSONObject root = data->AsObject();
+	gConfig.EnableWireframe = root.at("wireframe");
+	gConfig.EnableDashboard = root.at("dashboard");
 
-	gConfig.EnableWireframe = root.at(L"bWireframe")->AsBool();
-	gConfig.EnableDashboard = root.at(L"bDashboard")->AsBool();
+	gConfig.EnableColor = root.at("color");
+	gConfig.EnableBumps = root.at("bumps");
+	gConfig.EnableShadows = root.at("shadows");
+	gConfig.EnableSpeculars = root.at("speculars");
+	gConfig.EnableOcclusion = root.at("occlusion");
+	gConfig.EnableIrradiance = root.at("irradiance");
+	gConfig.EnableScattering = root.at("scattering");
 
-	gConfig.EnableColor = root.at(L"bColor")->AsBool();
-	gConfig.EnableBumps = root.at(L"bBumps")->AsBool();
-	gConfig.EnableShadows = root.at(L"bShadows")->AsBool();
-	gConfig.EnableSpeculars = root.at(L"bSpeculars")->AsBool();
-	gConfig.EnableOcclusion = root.at(L"bOcclusion")->AsBool();
-	gConfig.EnableIrradiance = root.at(L"bIrradiance")->AsBool();
-	gConfig.EnableScattering = root.at(L"bScattering")->AsBool();
+	gConfig.Ambient = (float)root.at("ambient");
+	gConfig.Fresnel = (float)root.at("fresnel");
+	gConfig.Roughness = (float)root.at("roughness");
+	gConfig.Bumpiness = (float)root.at("bumpiness");
+	gConfig.Specularity = (float)root.at("specularity");
+	gConfig.Convolution = (float)root.at("convolution");
+	gConfig.Translucency = (float)root.at("translucency");
 
-	gConfig.Ambient = (float)root.at(L"fAmbient")->AsNumber();
-	gConfig.Fresnel = (float)root.at(L"fFresnel")->AsNumber();
-	gConfig.Roughness = (float)root.at(L"fRoughness")->AsNumber();
-	gConfig.Bumpiness = (float)root.at(L"fBumpiness")->AsNumber();
-	gConfig.Specularity = (float)root.at(L"fSpecularity")->AsNumber();
-	gConfig.Scattering = (float)root.at(L"fScattering")->AsNumber();
-	gConfig.Translucency = (float)root.at(L"fTranslucency")->AsNumber();
+	std::string picker = root.at("picker");
+	std::string splitter = root.at("splitter");
+	std::string renderer = root.at("renderer");
 
-	std::wstring pickMode = root.at(L"sPick")->AsString();
-	if (Utility::CompareString(pickMode, L"draw")) {
+	// Picker
+	if (Utility::CompareString(picker, "paint")) {
 		gConfig.PickMode = PickType::PAINT;
 	}
-	else if (Utility::CompareString(pickMode, L"fuse")) {
+	else if (Utility::CompareString(picker, "merge")) {
 		gConfig.PickMode = PickType::MERGE;
 	}
 	else {
 		gConfig.PickMode = PickType::CARVE;
 	}
 
-	std::wstring splitMode = root.at(L"sSplit")->AsString();
-	if (Utility::CompareString(splitMode, L"4split")) {
+	// Splitter
+	if (Utility::CompareString(splitter, "4split")) {
 		gConfig.SplitMode = SplitType::SPLIT4;
 	}
-	else if (Utility::CompareString(splitMode, L"6split")) {
+	else if (Utility::CompareString(splitter, "6split")) {
 		gConfig.SplitMode = SplitType::SPLIT6;
 	}
 	else {
 		gConfig.SplitMode = SplitType::SPLIT3;
 	}
-	
-	std::wstring renderMode = root.at(L"sRenderer")->AsString();
-	if (Utility::CompareString(renderMode, L"phong")) {
+
+	// Renderer
+	if (Utility::CompareString(renderer, "phong")) {
 		gConfig.RenderMode = RenderType::PHONG;
 	}
-	else if (Utility::CompareString(renderMode, L"lambert")) {
+	else if (Utility::CompareString(renderer, "lambert")) {
 		gConfig.RenderMode = RenderType::LAMBERT;
 	}
 	else {
 		gConfig.RenderMode = RenderType::KELEMEN;
 	}
+
+
+	//auto data = std::unique_ptr<JSONValue>(JSON::Parse(contents.c_str()));
+	//if (!data || !data->IsObject()) { return false; }
+	//JSONObject root = data->AsObject();
+
+	//gConfig.EnableWireframe = root.at(L"bWireframe")->AsBool();
+	//gConfig.EnableDashboard = root.at(L"bDashboard")->AsBool();
+
+	//gConfig.EnableColor = root.at(L"bColor")->AsBool();
+	//gConfig.EnableBumps = root.at(L"bBumps")->AsBool();
+	//gConfig.EnableShadows = root.at(L"bShadows")->AsBool();
+	//gConfig.EnableSpeculars = root.at(L"bSpeculars")->AsBool();
+	//gConfig.EnableOcclusion = root.at(L"bOcclusion")->AsBool();
+	//gConfig.EnableIrradiance = root.at(L"bIrradiance")->AsBool();
+	//gConfig.EnableScattering = root.at(L"bScattering")->AsBool();
+
+	//gConfig.Ambient = (float)root.at(L"fAmbient")->AsNumber();
+	//gConfig.Fresnel = (float)root.at(L"fFresnel")->AsNumber();
+	//gConfig.Roughness = (float)root.at(L"fRoughness")->AsNumber();
+	//gConfig.Bumpiness = (float)root.at(L"fBumpiness")->AsNumber();
+	//gConfig.Specularity = (float)root.at(L"fSpecularity")->AsNumber();
+	//gConfig.Scattering = (float)root.at(L"fScattering")->AsNumber();
+	//gConfig.Translucency = (float)root.at(L"fTranslucency")->AsNumber();
+
+	//std::wstring pickMode = root.at(L"sPick")->AsString();
+	//if (Utility::CompareString(pickMode, L"draw")) {
+	//	gConfig.PickMode = PickType::PAINT;
+	//}
+	//else if (Utility::CompareString(pickMode, L"fuse")) {
+	//	gConfig.PickMode = PickType::MERGE;
+	//}
+	//else {
+	//	gConfig.PickMode = PickType::CARVE;
+	//}
+
+	//std::wstring splitMode = root.at(L"sSplit")->AsString();
+	//if (Utility::CompareString(splitMode, L"4split")) {
+	//	gConfig.SplitMode = SplitType::SPLIT4;
+	//}
+	//else if (Utility::CompareString(splitMode, L"6split")) {
+	//	gConfig.SplitMode = SplitType::SPLIT6;
+	//}
+	//else {
+	//	gConfig.SplitMode = SplitType::SPLIT3;
+	//}
+	//
+	//std::wstring renderMode = root.at(L"sRenderer")->AsString();
+	//if (Utility::CompareString(renderMode, L"phong")) {
+	//	gConfig.RenderMode = RenderType::PHONG;
+	//}
+	//else if (Utility::CompareString(renderMode, L"lambert")) {
+	//	gConfig.RenderMode = RenderType::LAMBERT;
+	//}
+	//else {
+	//	gConfig.RenderMode = RenderType::KELEMEN;
+	//}
 
 	return true;
 }
@@ -157,14 +217,14 @@ bool Application::LoadConfig()
 
 bool Application::LoadScene()
 {
-	std::string scenefile = gConfig.ResourcePath + std::string("Scene.json");
+	std::string sceneFile = gConfig.ResourcePath + std::string("Scene.json");
 
 	RECT rect; GetClientRect(mHwnd, &rect);
 	uint32_t width = uint32_t(rect.right - rect.left);
 	uint32_t height = uint32_t(rect.bottom - rect.top);
 
 	std::string contents;
-	std::ifstream in(scenefile, std::ios::in);
+	std::ifstream in(sceneFile, std::ios::in);
 	if (!in) return false;
 
 	in.seekg(0, std::ios::end);
@@ -173,56 +233,90 @@ bool Application::LoadScene()
 	in.read(&contents[0], contents.size());
 	in.close();
 
-	auto jdata = std::unique_ptr<JSONValue>(JSON::Parse(contents.c_str()));
-	if (!jdata || !jdata->IsObject()) return false;
-	auto& jcamera = jdata->AsObject().at(L"camera")->AsObject();
-	auto& jlights = jdata->AsObject().at(L"lights")->AsArray();
-	auto& jmodels = jdata->AsObject().at(L"models")->AsArray();
+    nlohmann::json root = nlohmann::json::parse(contents);
+    if (root.is_null()) { return false; }
+
+    auto& camera = root.at("camera");
+    auto& models = root.at("models");
+	auto& lights = root.at("lights");
+
+	// Camera
+    auto& position = camera.at("position");
+    mCamera = std::make_unique<Camera>(width, height, position[0], position[1], position[2]);
+
+	// Lights
+    for (auto& light : lights) {
+        std::string name = light.at("name");
+		auto& position = light.at("position");
+        auto& color = light.at("color");
+        mLights.push_back(std::make_shared<Light>(mDevice, mContext, position[0], position[1], position[2], Color(color[0], color[1], color[2]), name));
+    }
+
+	// Models
+    for (auto& model : models) {
+		auto& position = model.at("position");
+		auto& rotation = model.at("rotation");
+        std::string name = model.at("name");
+        std::wstring resourcePath = Utility::str2wstr(gConfig.ResourcePath);
+        std::wstring meshPath = resourcePath + Utility::str2wstr(model.at("mesh"));
+        std::wstring colorPath = resourcePath + Utility::str2wstr(model.at("color"));
+        std::wstring normalPath = resourcePath + Utility::str2wstr(model.at("normal"));
+        std::wstring specularPath = resourcePath + Utility::str2wstr(model.at("specular"));
+        std::wstring discolorPath = resourcePath + Utility::str2wstr(model.at("discolor"));
+        std::wstring occlusionPath = resourcePath + Utility::str2wstr(model.at("occlusion"));
+        mModels.push_back(std::make_shared<Entity>(mDevice, Vector3(position[0], position[1], position[2]), Vector2(rotation[0], rotation[1]), meshPath, colorPath, normalPath, specularPath, discolorPath, occlusionPath));
+    }
+
+	//auto jdata = std::unique_ptr<JSONValue>(JSON::Parse(contents.c_str()));
+	//if (!jdata || !jdata->IsObject()) return false;
+	//auto& jcamera = jdata->AsObject().at(L"camera")->AsObject();
+	//auto& jlights = jdata->AsObject().at(L"lights")->AsArray();
+	//auto& jmodels = jdata->AsObject().at(L"models")->AsArray();
 
 
-	// camera
-	float cy = (float)jcamera.at(L"position")->AsArray().at(0)->AsNumber();
-	float cp = (float)jcamera.at(L"position")->AsArray().at(1)->AsNumber();
-	float cd = (float)jcamera.at(L"position")->AsArray().at(2)->AsNumber();
-	mCamera = std::make_unique<Camera>(width, height, cy, cp, cd);
+	//// camera
+	//float cy = (float)jcamera.at(L"position")->AsArray().at(0)->AsNumber();
+	//float cp = (float)jcamera.at(L"position")->AsArray().at(1)->AsNumber();
+	//float cd = (float)jcamera.at(L"position")->AsArray().at(2)->AsNumber();
+	//mCamera = std::make_unique<Camera>(width, height, cy, cp, cd);
 
-	// lights
-	for (auto jlight : jlights) {
-		std::string name = Utility::wstr2str(jlight->AsObject().at(L"name")->AsString());
+	//// lights
+	//for (auto jlight : jlights) {
+	//	std::string name = Utility::wstr2str(jlight->AsObject().at(L"name")->AsString());
 
-		float y = (float)jlight->AsObject().at(L"position")->AsArray().at(0)->AsNumber();
-		float p = (float)jlight->AsObject().at(L"position")->AsArray().at(1)->AsNumber();
-		float d = (float)jlight->AsObject().at(L"position")->AsArray().at(2)->AsNumber();
+	//	float y = (float)jlight->AsObject().at(L"position")->AsArray().at(0)->AsNumber();
+	//	float p = (float)jlight->AsObject().at(L"position")->AsArray().at(1)->AsNumber();
+	//	float d = (float)jlight->AsObject().at(L"position")->AsArray().at(2)->AsNumber();
 
-		float r = (float)jlight->AsObject().at(L"color")->AsArray().at(0)->AsNumber();
-		float g = (float)jlight->AsObject().at(L"color")->AsArray().at(1)->AsNumber();
-		float b = (float)jlight->AsObject().at(L"color")->AsArray().at(2)->AsNumber();
+	//	float r = (float)jlight->AsObject().at(L"color")->AsArray().at(0)->AsNumber();
+	//	float g = (float)jlight->AsObject().at(L"color")->AsArray().at(1)->AsNumber();
+	//	float b = (float)jlight->AsObject().at(L"color")->AsArray().at(2)->AsNumber();
 
-		mLights.push_back(std::make_shared<Light>(mDevice, mContext, y, p, d, Color(r,g,b), name));
-	}
+	//	mLights.push_back(std::make_shared<Light>(mDevice, mContext, y, p, d, Color(r,g,b), name));
+	//}
 
-	// models
-	for (auto jmodel : jmodels) {
-		float x = (float)jmodel->AsObject().at(L"position")->AsArray().at(0)->AsNumber();
-		float y = (float)jmodel->AsObject().at(L"position")->AsArray().at(1)->AsNumber();
-		float z = (float)jmodel->AsObject().at(L"position")->AsArray().at(2)->AsNumber();
+	//// models
+	//for (auto jmodel : jmodels) {
+	//	float x = (float)jmodel->AsObject().at(L"position")->AsArray().at(0)->AsNumber();
+	//	float y = (float)jmodel->AsObject().at(L"position")->AsArray().at(1)->AsNumber();
+	//	float z = (float)jmodel->AsObject().at(L"position")->AsArray().at(2)->AsNumber();
 
-		float rx = (float)jmodel->AsObject().at(L"rotation")->AsArray().at(0)->AsNumber();
-		float ry = (float)jmodel->AsObject().at(L"rotation")->AsArray().at(1)->AsNumber();
+	//	float rx = (float)jmodel->AsObject().at(L"rotation")->AsArray().at(0)->AsNumber();
+	//	float ry = (float)jmodel->AsObject().at(L"rotation")->AsArray().at(1)->AsNumber();
 
-		std::string name = Utility::wstr2str(jmodel->AsObject().at(L"name")->AsString());
+	//	std::string name = Utility::wstr2str(jmodel->AsObject().at(L"name")->AsString());
 
-		std::wstring resourcePath = Utility::str2wstr(gConfig.ResourcePath);
-		std::wstring meshPath = resourcePath + jmodel->AsObject().at(L"mesh")->AsString();
-		std::wstring colorPath = resourcePath + jmodel->AsObject().at(L"color")->AsString();
-		std::wstring normalPath = resourcePath + jmodel->AsObject().at(L"normal")->AsString();
-		std::wstring specularPath = resourcePath + jmodel->AsObject().at(L"specular")->AsString();
-		std::wstring discolorPath = resourcePath + jmodel->AsObject().at(L"discolor")->AsString();
-		std::wstring occlusionPath = resourcePath + jmodel->AsObject().at(L"occlusion")->AsString();
+	//	std::wstring resourcePath = Utility::str2wstr(gConfig.ResourcePath);
+	//	std::wstring meshPath = resourcePath + jmodel->AsObject().at(L"mesh")->AsString();
+	//	std::wstring colorPath = resourcePath + jmodel->AsObject().at(L"color")->AsString();
+	//	std::wstring normalPath = resourcePath + jmodel->AsObject().at(L"normal")->AsString();
+	//	std::wstring specularPath = resourcePath + jmodel->AsObject().at(L"specular")->AsString();
+	//	std::wstring discolorPath = resourcePath + jmodel->AsObject().at(L"discolor")->AsString();
+	//	std::wstring occlusionPath = resourcePath + jmodel->AsObject().at(L"occlusion")->AsString();
 
-		mModels.push_back(std::make_shared<Entity>(mDevice, Vector3(x,y,z), Vector2(rx, ry), 
-			meshPath, colorPath, normalPath, specularPath, discolorPath, occlusionPath));
-	}
+	//	mModels.push_back(std::make_shared<Entity>(mDevice, Vector3(x,y,z), Vector2(rx, ry), 
+	//		meshPath, colorPath, normalPath, specularPath, discolorPath, occlusionPath));
+	//}
 
 	return true;
 }

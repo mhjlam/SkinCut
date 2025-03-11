@@ -11,7 +11,7 @@
 			"position"		: [ 0.0, 0.0, 0.0 ],
 			"rotation"		: [ 0.0, 0.0, 0.0 ],
 
-			"mesh"			: "Models\\InfiniteScanHead.obj",
+			"mesh"			: "Models\\Head.obj",
 			"color"			: "Models\\Color.dds",
 			"normal"		: "Models\\Normal.dds",
 			"specular"		: "Models\\Specular.dds",

@@ -85,7 +85,7 @@ void Dashboard::Render(std::vector<Light*>& lights)
 			ImGui::SliderFloat("Bumpiness", &gConfig.Bumpiness, 0.0f, 1.0f);
 			ImGui::SliderFloat("Roughness", &gConfig.Roughness, 0.0f, 1.0f);
 			ImGui::SliderFloat("Specularity", &gConfig.Specularity, 0.0f, 2.0f);
-			ImGui::SliderFloat("Scattering", &gConfig.Scattering, 0.0f, 0.1f);
+			ImGui::SliderFloat("Convolution", &gConfig.Convolution, 0.0f, 0.1f);
 			ImGui::SliderFloat("Translucency", &gConfig.Translucency, 0.0f, 1.0f);
 		}
 

@@ -160,6 +160,9 @@
     <Filter Include="Resources\Models">
       <UniqueIdentifier>{4e03f327-3681-4f50-b8e1-af75dc6f71b2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Libraries\nlohmann">
+      <UniqueIdentifier>{27468b95-2a98-45ca-a355-4694ac803d0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="libraries\SimpleJSON\JSON.cpp">
@@ -644,6 +647,12 @@
     <ClInclude Include="Libraries\ImGui\imstb_truetype.h">
       <Filter>Libraries\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\nlohmann\json.hpp">
+      <Filter>Libraries\nlohmann</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\nlohmann\json_fwd.hpp">
+      <Filter>Libraries\nlohmann</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Decal.ps.hlsl">
@@ -670,7 +679,7 @@
     <FxCompile Include="Shaders\Specular.ps.hlsl">
       <Filter>Shaders\Pixel</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SSSS.ps.hlsl">
+    <FxCompile Include="Shaders\Subsurface.ps.hlsl">
       <Filter>Shaders\Pixel</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Stretch.ps.hlsl">
@@ -753,7 +762,7 @@
     <CopyFileToFolders Include="Resources\Models\Specular.dds">
       <Filter>Resources\Models</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Resources\Models\InfiniteScanHead.obj">
+    <CopyFileToFolders Include="Resources\Models\Head.obj">
       <Filter>Resources\Models</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="Resources\Models\License.txt">
