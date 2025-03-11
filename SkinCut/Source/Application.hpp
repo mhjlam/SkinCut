@@ -38,25 +38,25 @@ namespace SkinCut
 	class Application
 	{
 	protected:
-		HWND								mHwnd;
+		HWND									mHwnd;
 
-		ComPtr<ID3D11Device>				mDevice;
-		ComPtr<IDXGISwapChain>				mSwapChain;
-		ComPtr<ID3D11DeviceContext>			mContext;
+		ComPtr<ID3D11Device>					mDevice;
+		ComPtr<IDXGISwapChain>					mSwapChain;
+		ComPtr<ID3D11DeviceContext>				mContext;
 
-		std::unique_ptr<SpriteFont>			mSpriteFont;
-		std::unique_ptr<SpriteBatch>		mSpriteBatch;
+		std::unique_ptr<SpriteFont>				mSpriteFont;
+		std::unique_ptr<SpriteBatch>			mSpriteBatch;
 
-		std::unique_ptr<Camera>				mCamera;
-		std::vector<std::shared_ptr<Light>> mLights;
-		std::vector<std::shared_ptr<Entity>> mModels;
+		std::unique_ptr<Camera>					mCamera;
+		std::vector<std::shared_ptr<Light>>		mLights;
+		std::vector<std::shared_ptr<Entity>>	mModels;
 
-		std::unique_ptr<Renderer>			mRenderer;
-		std::unique_ptr<Dashboard>			mDashboard;
-		std::unique_ptr<Generator>			mGenerator;
+		std::unique_ptr<Renderer>				mRenderer;
+		std::unique_ptr<Dashboard>				mDashboard;
+		std::unique_ptr<Generator>				mGenerator;
 
-		std::unique_ptr<Intersection>		mPointA;
-		std::unique_ptr<Intersection>		mPointB;
+		std::unique_ptr<Intersection>			mPointA;
+		std::unique_ptr<Intersection>			mPointB;
 
 
 	public:
@@ -67,8 +67,7 @@ namespace SkinCut
 		virtual bool Update();
 		virtual bool Render();
 		virtual bool Reload();
-		virtual LRESULT CALLBACK WndProc(HWND hwnd, uint32_t msg, WPARAM wParam, LPARAM lParam);
-
+		LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	protected: // subroutines
 		bool LoadScene();

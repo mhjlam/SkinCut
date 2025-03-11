@@ -7,6 +7,8 @@
 #include <iomanip>
 
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
 #include "SimpleJSON/JSON.h"
 
 #include "Light.hpp"
@@ -19,6 +21,7 @@
 #include "Dashboard.hpp"
 #include "Generator.hpp"
 #include "Stopwatch.hpp"
+#include "FrameBuffer.hpp"
 
 
 #pragma comment(lib, "dxgi.lib")
@@ -34,6 +37,12 @@ using namespace SkinCut::Math;
 
 namespace SkinCut {
 	Configuration gConfig;
+
+	static UINT gResizeWidth = 0;
+	static UINT gResizeHeight = 0;
+
+	static bool gSwapChainOccluded = false;
+	static ID3D11RenderTargetView* gMainRenderTargetView = nullptr;
 }
 
 
@@ -49,11 +58,11 @@ Application::Application()
 
 Application::~Application() { }
 
-bool Application::Initialize(HWND hWnd, const std::string& respath)
+bool Application::Initialize(HWND hwnd, const std::string& resourcePath)
 {
-	mHwnd = hWnd;
-	if (!mHwnd) return false;
-	gConfig.ResourcePath = respath;
+	mHwnd = hwnd;
+	if (!mHwnd) { return false; }
+	gConfig.ResourcePath = resourcePath;
 
 	Stopwatch sw("init", CLOCK_QPC_MS);
 	
@@ -239,14 +248,14 @@ bool Application::SetupRenderer()
 
 bool Application::SetupDashboard()
 {
-	std::wstring respath = Utility::str2wstr(gConfig.ResourcePath);
-	std::wstring fontfile = respath + L"Fonts\\Arial12.spritefont";
+	std::wstring resourcePath = Utility::str2wstr(gConfig.ResourcePath);
+	std::wstring spriteFontFile = resourcePath + L"Fonts\\Arial12.spritefont";
 	
 	mDashboard = std::make_unique<Dashboard>(mHwnd, mDevice, mContext);
 
 	// Sprite batch and sprite font enable simple text rendering
 	mSpriteBatch = std::make_unique<SpriteBatch>(mContext.Get());
-	mSpriteFont = std::make_unique<SpriteFont>(mDevice.Get(), fontfile.c_str());
+	mSpriteFont = std::make_unique<SpriteFont>(mDevice.Get(), spriteFontFile.c_str());
 
 	return true;
 }
@@ -260,11 +269,62 @@ bool Application::Update()
 		throw std::exception("Renderer was not initialized properly");
 	}
 
+	// Handle window being minimized or screen locked
+	if (mRenderer->mSwapChainOccluded && mRenderer->mSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
+		::Sleep(10);
+		return true;
+	}
+	mRenderer->mSwapChainOccluded = false;
+
+	// Handle window resize (don't resize directly in the WM_SIZE handler)
+	if (gResizeWidth != 0 && gResizeHeight != 0) {
+		mCamera->Resize(gResizeWidth, gResizeHeight);
+		mRenderer->Resize(gResizeWidth, gResizeHeight);
+	}
+
 	ImGuiIO& io = ImGui::GetIO();
+
+	// Handle keyboard input
+	if (ImGui::IsKeyDown(ImGuiKey_Escape)) {
+		DestroyWindow(mHwnd);
+		return true;
+	}
+
+	// Reload scene
+	if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+		Reload();
+		return true;
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
+		gConfig.EnableDashboard = !gConfig.EnableDashboard;
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_P)) { // cycle through pick modes
+		gConfig.PickMode = (gConfig.PickMode == PickType::CARVE) ? gConfig.PickMode = PickType::PAINT : PickType((int)gConfig.PickMode + 1);
+		mPointA.release();
+		mPointB.release();
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_S)) {
+		gConfig.SplitMode = (gConfig.SplitMode == SplitType::SPLIT6) ? SplitType::SPLIT3 : SplitType((int)gConfig.SplitMode + 1);
+		mPointA.release();
+		mPointB.release();
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+		gConfig.EnableWireframe = !gConfig.EnableWireframe;
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_T)) {
+		PerformanceTest();
+	}
+
+	mDashboard->Update();
 
 	if (!io.KeyCtrl && !io.KeyShift && !mPointA && !mPointB && !io.WantCaptureMouse && !io.WantCaptureKeyboard) {
 		mCamera->Update();
 	}
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+        Pick();
+    }
 
 	for (auto& light : mLights) {
 		light->Update();
@@ -273,8 +333,6 @@ bool Application::Update()
 	for (auto& model : mModels) {
 		model->Update(mCamera->mView, mCamera->mProjection);
 	}
-
-	mDashboard->Update();
 
 	return true;
 }
@@ -286,10 +344,23 @@ bool Application::Render()
 		throw std::exception("Renderer was not initialized properly");
 	}
 
-	// render scene
+	if (gResizeWidth != 0 && gResizeHeight != 0) {
+		if (mRenderer->mBackBuffer->mColorBuffer.Get()) {
+			mRenderer->mBackBuffer->mColorBuffer.Get()->Release();
+		}
+		mRenderer->mSwapChain->ResizeBuffers(0, gResizeWidth, gResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+		gResizeWidth = gResizeHeight = 0;
+
+		ID3D11Texture2D* pBackBuffer;
+		mRenderer->mSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+		mRenderer->mDevice->CreateRenderTargetView(pBackBuffer, nullptr, mRenderer->mBackBuffer->mColorBuffer.GetAddressOf());
+		pBackBuffer->Release();
+	}
+
+	// Render scene
 	mRenderer->Render(mModels, mLights, mCamera);
 
-	// render user interface
+	// Render user interface
 	if (gConfig.EnableDashboard)
 	{
 		std::vector<Light*> lights;
@@ -324,7 +395,8 @@ bool Application::Render()
 	}
 
 	// Present rendered image on screen.
-	HREXCEPT(mRenderer->mSwapChain->Present(0, 0));
+	HREXCEPT(mRenderer->mSwapChain->Present(1, 0));
+	//gSwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);
 	
 	return true;
 }
@@ -550,199 +622,35 @@ void Application::PaintWound(std::list<Link>& cutLine, std::shared_ptr<Entity>& 
 	mRenderer->PaintDiscoloration(model, cf, cutHeight);
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-
-LRESULT CALLBACK Application::WndProc(HWND hWnd, uint32_t msg, WPARAM wParam, LPARAM lParam)
+LRESULT WINAPI Application::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	ImGuiIO& io = ImGui::GetIO();
-
-	try {
-		switch (msg) {
-			case WM_CLOSE: {
-				DestroyWindow(hWnd);
-				break;
-			}
-
-			case WM_DESTROY: {
-				PostQuitMessage(WM_QUIT);
-				break;
-			}
-
-			case WM_KILLFOCUS: { // focus lost
-				io.KeyCtrl = false;
-				io.KeyShift = false;
-				io.MouseDown[0] = false;
-				io.MouseDown[1] = false;
-				io.MouseDown[2] = false;
-				io.MouseDown[3] = false;
-				io.MouseDown[4] = false;
-				break;
-			}
-
-			case WM_SETFOCUS: { // focus (re)gained
-				break;
-			}
-
-			case WM_SIZE: {
-				if (mDevice && wParam != SIZE_MINIMIZED) {
-					uint32_t width = (uint32_t)LOWORD(lParam);
-					uint32_t height = (uint32_t)HIWORD(lParam);
-
-					mCamera->Resize(width, height);
-					mRenderer->Resize(width, height);
-				}
-
-				break;
-			}
-
-			case WM_KEYDOWN: {
-				if (wParam < 256) {
-					io.KeysDown[wParam] = 1;
-				}
-
-				switch (wParam) {
-					case VK_ESCAPE: {
-						DestroyWindow(hWnd);
-						break;
-					}
-					case VK_CONTROL: {
-						io.KeyCtrl = true;
-						break;
-					}
-					case VK_SHIFT: {
-						io.KeyShift = true;
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case WM_KEYUP: {
-				if (wParam < 256) {
-					io.KeysDown[wParam] = 0;
-				}
-
-				if (wParam == VK_F1) {
-					gConfig.EnableDashboard = !gConfig.EnableDashboard;
-				}
-
-				if (wParam == VK_CONTROL) {
-					io.KeyCtrl = false;
-				}
-
-				if (wParam == VK_SHIFT) {
-					io.KeyShift = false;
-				}
-
-				if (io.WantCaptureKeyboard) {
-					break;
-				}
-
-				switch (wParam) {
-					case 'P': { // cycle through pick modes
-						gConfig.PickMode = (gConfig.PickMode == PickType::CARVE) ? gConfig.PickMode = PickType::PAINT : PickType((int)gConfig.PickMode + 1);
-						mPointA.release();
-						mPointB.release();
-						break;
-					}
-
-					case 'S': { // cycle through split modes
-						gConfig.SplitMode = (gConfig.SplitMode == SplitType::SPLIT6) ? SplitType::SPLIT3 : SplitType((int)gConfig.SplitMode + 1);
-						mPointA.release();
-						mPointB.release();
-						break;
-					}
-					
-					case 'R': { // reload scene
-						Reload();
-						break;
-					}
-
-					case 'W': { // toggle wireframe mode
-						gConfig.EnableWireframe = !gConfig.EnableWireframe;
-						break;
-					}
-
-					case 'T': { // test performance
-						PerformanceTest();
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case WM_LBUTTONDOWN: {
-				io.MouseDown[0] = true;
-				if (io.WantCaptureMouse) break;
-				break;
-			}
-
-			case WM_LBUTTONUP: {
-				io.MouseDown[0] = false;
-				if (io.WantCaptureMouse) break;
-
-				if (io.KeyShift) {
-					Pick();
-				}
-				if (io.KeyCtrl) {
-					Split();
-				}
-
-				//if (io.KeyAlt) {
-				//	Draw();
-				//}
-
-				break;
-			}
-
-			case WM_RBUTTONDOWN: {
-				io.MouseDown[1] = true;
-				break;
-			}
-
-			case WM_RBUTTONUP: {
-				io.MouseDown[1] = false;
-				break;
-			}
-
-			case WM_MBUTTONDOWN: {
-				io.MouseDown[2] = true;
-				break;
-			}
-
-			case WM_MBUTTONUP: {
-				io.MouseDown[2] = false;
-				break;
-			}
-
-			case WM_MOUSEMOVE: {
-				io.MousePos.x = (signed short)(lParam);
-				io.MousePos.y = (signed short)(lParam >> 16);
-				break;
-			}
-
-			case WM_MOUSEWHEEL: {
-				io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
-				break;
-			}
-		}
-	}
-	catch (std::exception& e) { // error handling (reload model: yes|ignore|exit)
-		int mbid = Utility::ErrorMessage(e);
-
-		if (mbid == IDYES) {
-			Reload();
-		}
-		if (mbid == IDCANCEL) {
-			PostQuitMessage(WM_QUIT);
-		}
-
-		return DefWindowProc(hWnd, msg, wParam, lParam);
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) {
+		return true;
 	}
 
-	return DefWindowProc(hWnd, msg, wParam, lParam);
+	switch (msg) {
+		case WM_SIZE: { 
+			if (wParam == SIZE_MINIMIZED) { 
+				return 0;
+			}
+			gResizeWidth = (UINT)LOWORD(lParam); // Queue resize
+			gResizeHeight = (UINT)HIWORD(lParam);
+			return 0;
+		}
+		case WM_SYSCOMMAND: {
+			if ((wParam & 0xfff0) == SC_KEYMENU) { // Disable ALT application menu
+				return 0;
+			}
+			break;
+		}
+		case WM_DESTROY: {
+			::PostQuitMessage(0);
+			return 0;
+		}
+	}
+	return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
 

@@ -162,9 +162,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="libraries\ImGui\imgui.cpp">
-      <Filter>Libraries\ImGui</Filter>
-    </ClCompile>
     <ClCompile Include="libraries\SimpleJSON\JSON.cpp">
       <Filter>Libraries\SimpleJSON</Filter>
     </ClCompile>
@@ -408,23 +405,32 @@
     <ClCompile Include="Libraries\DirectXTex\DirectXTexWIC.cpp">
       <Filter>Libraries\DirectXTex\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_demo.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_draw.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_impl_dx11.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_impl_dx12.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_impl_win32.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_tables.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\ImGui\imgui_widgets.cpp">
+      <Filter>Libraries\ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libraries\ImGui\imconfig.h">
-      <Filter>Libraries\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\ImGui\imgui.h">
-      <Filter>Libraries\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\ImGui\stb_rect_pack.h">
-      <Filter>Libraries\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\ImGui\stb_textedit.h">
-      <Filter>Libraries\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\ImGui\stb_truetype.h">
-      <Filter>Libraries\ImGui</Filter>
-    </ClInclude>
     <ClInclude Include="libraries\SimpleJSON\JSON.h">
       <Filter>Libraries\SimpleJSON</Filter>
     </ClInclude>
@@ -611,14 +617,35 @@
     <ClInclude Include="Libraries\DirectXTK\Inc\SimpleMath.h">
       <Filter>Libraries\DirectXTK\Inc\Shared</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imconfig.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imgui.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imgui_impl_dx11.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imgui_impl_dx12.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imgui_impl_win32.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imgui_internal.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imstb_rectpack.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imstb_textedit.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\ImGui\imstb_truetype.h">
+      <Filter>Libraries\ImGui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="libraries\ImGui\imguips.hlsl">
-      <Filter>Libraries\ImGui</Filter>
-    </FxCompile>
-    <FxCompile Include="libraries\ImGui\imguivs.hlsl">
-      <Filter>Libraries\ImGui</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Decal.ps.hlsl">
       <Filter>Shaders\Pixel</Filter>
     </FxCompile>

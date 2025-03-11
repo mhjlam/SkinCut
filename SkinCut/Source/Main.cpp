@@ -25,7 +25,7 @@ static const uint32_t cWindowWidth = 1280;
 static const uint32_t cWindowHeight = 720;
 
 
-static LRESULT CALLBACK WndProc(HWND hWnd, uint32_t msg, WPARAM wParam, LPARAM lParam)
+static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	return gApp.WndProc(hWnd, msg, wParam, lParam);
 }
@@ -35,7 +35,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, uint32_t msg, WPARAM wParam, LPARAM l
 static bool Initialize(HWND hwnd)
 {
 	CHAR exeFilePath[MAX_PATH] = { 0 };
-	GetModuleFileNameA(NULL, &exeFilePath[0], MAX_PATH);
+	::GetModuleFileNameA(NULL, &exeFilePath[0], MAX_PATH);
     std::string executablePath = std::filesystem::path(std::string(exeFilePath)).remove_filename().string();
 
 	// Default resource directory
@@ -50,11 +50,10 @@ static bool Initialize(HWND hwnd)
 	}
 	
 	// Attempt to find resource directory
-	if (GetFileAttributesA(resourcePath.c_str()) == INVALID_FILE_ATTRIBUTES)
-	{
+	if (::GetFileAttributesA(resourcePath.c_str()) == INVALID_FILE_ATTRIBUTES) {
 		std::stringstream ss;
 		ss << "Unable to locate resource directory '" << resourcePath << "'";
-		MessageBoxA(nullptr, ss.str().c_str(), "ERROR", MB_ICONERROR | MB_OK);
+		::MessageBoxA(nullptr, ss.str().c_str(), "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
@@ -64,29 +63,29 @@ static bool Initialize(HWND hwnd)
 	std::string configFile = resourcePath + std::string("Config.json");
 	std::string sceneFile = resourcePath + std::string("Scene.json");
 
-	if (FindFirstFileA(configFile.c_str(), &data) == INVALID_HANDLE_VALUE) {
-		MessageBoxA(nullptr, "Unable to locate config file", "ERROR", MB_ICONERROR | MB_OK);
+	if (::FindFirstFileA(configFile.c_str(), &data) == INVALID_HANDLE_VALUE) {
+		::MessageBoxA(nullptr, "Unable to locate config file", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
-	if (FindFirstFileA(sceneFile.c_str(), &data) == INVALID_HANDLE_VALUE) {
-		MessageBoxA(nullptr, "Unable to locate scene file", "ERROR", MB_ICONERROR | MB_OK);
+	if (::FindFirstFileA(sceneFile.c_str(), &data) == INVALID_HANDLE_VALUE) {
+		::MessageBoxA(nullptr, "Unable to locate scene file", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
 	// Attempt to find shader directory
 	std::string shaderDir = resourcePath + std::string("Shaders\\");
 
-	if (GetFileAttributesA(shaderDir.c_str()) == INVALID_FILE_ATTRIBUTES) {
-		MessageBoxA(nullptr, "Unable to locate shader directory", "ERROR", MB_ICONERROR | MB_OK);
+	if (::GetFileAttributesA(shaderDir.c_str()) == INVALID_FILE_ATTRIBUTES) {
+		::MessageBoxA(nullptr, "Unable to locate shader directory", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
 	// Attempt to find texture directory
 	std::string textureDir = resourcePath + std::string("Textures\\");
 
-	if (GetFileAttributesA(textureDir.c_str()) == INVALID_FILE_ATTRIBUTES) {
-		MessageBoxA(nullptr, "Unable to locate texture directory", "ERROR", MB_ICONERROR | MB_OK);
+	if (::GetFileAttributesA(textureDir.c_str()) == INVALID_FILE_ATTRIBUTES) {
+		::MessageBoxA(nullptr, "Unable to locate texture directory", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
@@ -94,14 +93,13 @@ static bool Initialize(HWND hwnd)
 	std::string fontDir = resourcePath + std::string("Fonts\\");
 
 	if (GetFileAttributesA(fontDir.c_str()) == INVALID_FILE_ATTRIBUTES) {
-		MessageBoxA(nullptr, "Unable to locate font directory", "ERROR", MB_ICONERROR | MB_OK);
+		::MessageBoxA(nullptr, "Unable to locate font directory", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
-
 	// Attempt initialization
 	if (!gApp.Initialize(hwnd, resourcePath)) {
-		MessageBoxA(nullptr, "Initialization failed", "ERROR", MB_ICONERROR | MB_OK);
+		::MessageBoxA(nullptr, "Initialization failed", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
@@ -113,13 +111,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 {
 #ifdef _DEBUG
 	// Track memory allocation
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+	::_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	::_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
 #endif
 
 
 	// Allocate window and redirect output there
-	AllocConsole();
+	::AllocConsole();
 	FILE* pCout = nullptr;
 	FILE* pCerr = nullptr;
 	std::ignore = freopen_s(&pCout, "CONOUT$", "w", stdout);
@@ -127,7 +125,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 		
 	// Create window class
-	WNDCLASSEX wcex;
+	WNDCLASSEX wcex{};
 	wcex.lpszClassName = L"WINDOW_CLASS";
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -142,7 +140,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	wcex.cbWndExtra = 0;
 
 	if (!RegisterClassEx(&wcex)) {
-		MessageBoxA(nullptr, "Window registration failed", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		::MessageBoxA(nullptr, "Window registration failed", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return 1;
 	}
 
@@ -152,7 +150,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	LONG taskbarH = 0L;
 	HWND hwndTaskbar = FindWindow(L"Shell_traywnd", nullptr); // find taskbar
 
-	if (hwndTaskbar && GetWindowRect(hwndTaskbar, &rectTaskbar)) {
+	if (hwndTaskbar && ::GetWindowRect(hwndTaskbar, &rectTaskbar)) {
 		taskbarW = rectTaskbar.right - rectTaskbar.left;
 		taskbarH = rectTaskbar.bottom - rectTaskbar.top;
 
@@ -170,36 +168,34 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		}
 	}
 
-	int windowX = (GetSystemMetrics(SM_CXSCREEN) - cWindowWidth  - taskbarW) / 2;
-	int windowY = (GetSystemMetrics(SM_CYSCREEN) - cWindowHeight - taskbarH) / 2;
+	int windowX = (::GetSystemMetrics(SM_CXSCREEN) - cWindowWidth  - taskbarW) / 2;
+	int windowY = (::GetSystemMetrics(SM_CYSCREEN) - cWindowHeight - taskbarH) / 2;
 
 	// Create window
 	HWND hWnd = CreateWindowEx(WS_EX_CLIENTEDGE, L"WINDOW_CLASS", L"SkinCut", WS_OVERLAPPEDWINDOW, 
 		windowX, windowY, cWindowWidth, cWindowHeight, nullptr, nullptr, hInstance, nullptr);
 
 	if (!hWnd) {
-		MessageBoxA(nullptr, "Window creation failed", "ERROR", MB_ICONERROR | MB_OK);
+		::MessageBoxA(nullptr, "Window creation failed", "ERROR", MB_ICONERROR | MB_OK);
 		return 1;
 	}
 	
 	if (!Initialize(hWnd)) {
-		MessageBoxA(nullptr, "Initialization failed", "ERROR", MB_ICONERROR | MB_OK);
+		::MessageBoxA(nullptr, "Initialization failed", "ERROR", MB_ICONERROR | MB_OK);
 		return 1;
 	}
 
-
 	// Show window
-	ShowWindow(hWnd, SW_SHOWDEFAULT);
-	UpdateWindow(hWnd);
-
+	::ShowWindow(hWnd, SW_SHOWDEFAULT);
+	::UpdateWindow(hWnd);
 
 	MSG msg;
-	ZeroMemory(&msg, sizeof(MSG));
+	::ZeroMemory(&msg, sizeof(MSG));
 
 	while (msg.message != WM_QUIT) {
-		if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+		if (::PeekMessageW(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+			::TranslateMessage(&msg);
+			::DispatchMessageW(&msg);
 			continue;
 		}
 
@@ -210,18 +206,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		catch (std::exception& e) {
 			std::stringstream ss;
 			ss << "Critical error: " << e.what();
-			MessageBoxA(nullptr, ss.str().c_str(), "ERROR", MB_ICONERROR | MB_OK);
+			::MessageBoxA(nullptr, ss.str().c_str(), "ERROR", MB_ICONERROR | MB_OK);
 
-			ChangeDisplaySettings(nullptr, 0);
-			DestroyWindow(hWnd);
-			UnregisterClass(wcex.lpszClassName, hInstance);
+			::ChangeDisplaySettingsW(nullptr, 0);
+			::DestroyWindow(hWnd);
+			::UnregisterClassW(wcex.lpszClassName, wcex.hInstance);
 			return 1;
 		}
 	}
 	
-	ChangeDisplaySettings(nullptr, 0);
-	DestroyWindow(hWnd);
-	UnregisterClass(wcex.lpszClassName, hInstance);
+	::ChangeDisplaySettingsW(nullptr, 0);
+	::DestroyWindow(hWnd);
+	::UnregisterClassW(wcex.lpszClassName, wcex.hInstance);
 
 	return static_cast<int>(msg.wParam);
 }

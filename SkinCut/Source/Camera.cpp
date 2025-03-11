@@ -22,7 +22,7 @@ const float Camera::cPitchMax = DirectX::XM_PIDIV2 - 0.2f;
 
 
 Camera::Camera(uint32_t width, uint32_t height, float yaw, float pitch, float distance)
-	: mYaw(yaw), mPitch(pitch), mDistance(distance)
+: mYaw(yaw), mPitch(pitch), mDistance(distance)
 {
 	mOrigYaw = mYaw;
 	mOrigPitch = mPitch;
@@ -38,9 +38,7 @@ Camera::Camera(uint32_t width, uint32_t height, float yaw, float pitch, float di
 			Matrix::CreateRotationX(mPitch) * 
 			Matrix::CreateTranslation(-mPanX, -mPanY, mDistance);
 
-	mProjection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cFieldOfView), 
-		mWidth / mHeight, cNearPlane, cFarPlane);
-
+	mProjection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cFieldOfView), mWidth / mHeight, cNearPlane, cFarPlane);
 	mEye = mView.Invert().Translation();
 	mTarget = Vector3(0,0,0);
 }
@@ -50,18 +48,13 @@ void Camera::Update()
 {
 	ImGuiIO& io = ImGui::GetIO();
 
-	if (io.MouseDown[0]) { // left: rotate
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) { // left: rotate
 		mYaw -= io.MouseDelta.x * 0.004f;
 		mPitch -= io.MouseDelta.y * 0.004f;
 		mPitch = std::max(cPitchMin, std::min(mPitch, cPitchMax)); // clamp pitch
 	}
 
-	if (io.MouseDown[1]) { // right: zoom
-		mDistance += io.MouseDelta.y / 75.0f;
-		mDistance = std::max(cDistanceMin, std::min(mDistance, cDistanceMax)); // clamp
-	}
-
-	if (io.MouseDown[2]) { // middle: pan
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) { // right: pan
 		// Update position
 		float dX = io.MouseDelta.x / mWidth;
 		float dY = io.MouseDelta.y / mHeight;
@@ -76,22 +69,11 @@ void Camera::Update()
 	}
 
 	if (io.MouseWheel > 0) {
-		mDistance -= 0.5f;
-		mDistance = std::max(cDistanceMin, std::min(mDistance, cDistanceMax));
+		mDistance = std::max(cDistanceMin, std::min(mDistance - 0.5f, cDistanceMax));
 	}
 	else if (io.MouseWheel < 0) {
-		mDistance += 0.5f;
-		mDistance = std::max(cDistanceMin, std::min(mDistance, cDistanceMax));
+		mDistance = std::max(cDistanceMin, std::min(mDistance + 0.5f, cDistanceMax));
 	}
-
-// 	Matrix rotation = Matrix::CreateFromYawPitchRoll(mYaw, -mPitch, 0);
-// 
-// 	Vector3 translation(0, 0, mDistance);
-// 	translation = Vector3::Transform(translation, rotation);
-// 	mEye = mTarget + translation;
-// 
-// 	Vector3 up = Vector3::Transform(Vector3(0,1,0), rotation);
-// 	mView = Matrix::CreateLookAt(mEye, mTarget, up);
 
 	// this assumes target is at (0,0,0):
 	mView = Matrix::CreateRotationY(mYaw) * 
@@ -105,8 +87,7 @@ void Camera::Resize(uint32_t width, uint32_t height)
 {
 	mWidth = (float)width;
 	mHeight = (float)height;
-	mProjection = XMMatrixPerspectiveFovLH(
-		XMConvertToRadians(cFieldOfView), mWidth / mHeight, cNearPlane, cFarPlane);
+	mProjection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cFieldOfView), mWidth / mHeight, cNearPlane, cFarPlane);
 }
 
 
@@ -116,7 +97,6 @@ void Camera::Reset()
 	mYaw = mOrigYaw;
 	mPitch = mOrigPitch;
 	mDistance = mOrigDistance;
-
 
 	mPanX = 0.0f;
 	mPanY = 0.0f;

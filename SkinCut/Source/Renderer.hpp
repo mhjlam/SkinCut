@@ -26,32 +26,34 @@ namespace SkinCut
 {
 	class Decal;
 	class Light;
-	class Entity;
 	class Camera;
+	class Entity;
 	class Shader;
+	class Target;
 	class Sampler;
 	class Texture;
 	class FrameBuffer;
-	class Target;
 	class VertexBuffer;
 
 
 	class Renderer
 	{
 	public:
-		unsigned int					mWidth;
-		unsigned int					mHeight;
-		D3D_DRIVER_TYPE					mDriverType;
-		D3D_FEATURE_LEVEL				mFeatureLevel;
+		unsigned int mWidth;
+		unsigned int mHeight;
+		D3D_DRIVER_TYPE	mDriverType;
+		D3D_FEATURE_LEVEL mFeatureLevel;
 
-		ComPtr<ID3D11Device>			mDevice;
-		ComPtr<IDXGISwapChain>			mSwapChain;
-		ComPtr<ID3D11DeviceContext>		mContext;
-		ComPtr<ID3D11RasterizerState>	mRasterizer;
+		ComPtr<ID3D11Device> mDevice;
+		ComPtr<IDXGISwapChain> mSwapChain;
+		ComPtr<ID3D11DeviceContext> mContext;
+		ComPtr<ID3D11RasterizerState> mRasterizer;
 		ComPtr<ID3D11DepthStencilState>	mDepthStencil;
 
-		std::shared_ptr<FrameBuffer>	mBackBuffer;
-		std::shared_ptr<VertexBuffer>	mScreenBuffer;
+		std::shared_ptr<FrameBuffer> mBackBuffer;
+		std::shared_ptr<VertexBuffer> mScreenBuffer;
+
+		bool mSwapChainOccluded;
 
 
 	private:
@@ -86,14 +88,14 @@ namespace SkinCut
 		void InitializeTargets();
 		void InitializeKernel();
 
-		void Draw(std::shared_ptr<VertexBuffer>& vertexbuffer,
+		void Draw(std::shared_ptr<VertexBuffer>& vertexBuffer,
 			      std::shared_ptr<Shader>& shader,
-			      D3D11_VIEWPORT viewport,
-			      ID3D11DepthStencilView* depthbuffer,
+			      D3D11_VIEWPORT viewPort,
+			      ID3D11DepthStencilView* depthBuffer,
 			      std::vector<ID3D11RenderTargetView*>& targets,
 			      std::vector<ID3D11ShaderResourceView*>& resources,
 			      std::vector<ID3D11SamplerState*>& samplers,
-			      D3D11_FILL_MODE fillmode = D3D11_FILL_SOLID) const;
+			      D3D11_FILL_MODE fillMode = D3D11_FILL_SOLID) const;
 
 		void Draw(std::shared_ptr<Entity>& model,
 			      std::shared_ptr<Shader>& shader,
@@ -101,7 +103,7 @@ namespace SkinCut
 			      std::vector<ID3D11RenderTargetView*>& targets,
 			      std::vector<ID3D11ShaderResourceView*>& resources,
 			      std::vector<ID3D11SamplerState*>& samplers,
-			      D3D11_FILL_MODE fillmode = D3D11_FILL_SOLID);
+			      D3D11_FILL_MODE fillMode = D3D11_FILL_SOLID);
 
 		void RenderDepth(std::shared_ptr<Entity>& model, 
 						 std::vector<std::shared_ptr<Light>>& lights, 
