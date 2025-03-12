@@ -5,31 +5,65 @@
 
 #include "Sampler.hpp"
 #include "Texture.hpp"
-#include "Utility.hpp"
+#include "Util.hpp"
 
 
 using namespace SkinCut;
 
 
+D3D11_BLEND_DESC Shader::DefaultBlendDesc() {
+	D3D11_BLEND_DESC blendDesc;
+	::ZeroMemory(&blendDesc, sizeof(blendDesc));
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+	for (uint8_t i = 0; i < 8; ++i) {
+		blendDesc.RenderTarget[i].BlendEnable = FALSE;
+		blendDesc.RenderTarget[i].SrcBlend = D3D11_BLEND_ONE;
+		blendDesc.RenderTarget[i].DestBlend = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[i].BlendOp = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[i].SrcBlendAlpha = D3D11_BLEND_ONE;
+		blendDesc.RenderTarget[i].DestBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[i].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[i].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	}
+	return blendDesc;
+}
 
-Shader::Shader(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, 
-	const std::wstring vsFile, const std::wstring psFile) : mDevice(device), mContext(context)
+
+D3D11_DEPTH_STENCIL_DESC Shader::DefaultDepthDesc()
+{
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+	::ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.StencilEnable = FALSE;
+	depthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	depthStencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	return depthStencilDesc;
+}
+
+
+Shader::Shader(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, const std::wstring vsFile, const std::wstring psFile)
+: mDevice(device), mContext(context)
 {
 	mStencilRef = 0;
 
 	ComPtr<ID3DBlob> vsBlob;
 	ComPtr<ID3DBlob> psBlob;
 
-	// vertex shader
+	// Vertex shader
 	if (vsFile.empty()) {
-		std::string vsStr = 
-			"float4 main(float4 pos : POSITION) : SV_POSITION\n"
-			"{\n"
-			"	return pos;\n"
-			"}\n";
-
-		HREXCEPT(D3DCompile(vsStr.c_str(), vsStr.size(), "VS", nullptr, 
-			nullptr, "main", "vs_4_0", 0, 0, vsBlob.GetAddressOf(), nullptr));
+		std::string vsStr = "float4 main(float4 pos : POSITION) : SV_POSITION { return pos; }\n";
+		HREXCEPT(D3DCompile(vsStr.c_str(), vsStr.size(), "VS", nullptr, nullptr, "main", "vs_4_0", 0, 0, vsBlob.GetAddressOf(), nullptr));
 	}
 	else {
 		HREXCEPT(D3DReadFileToBlob(vsFile.c_str(), vsBlob.GetAddressOf()));
@@ -37,31 +71,85 @@ Shader::Shader(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& contex
 	}
 
 	InitializeInputLayout(vsBlob);
-	HREXCEPT(mDevice->CreateVertexShader(vsBlob->GetBufferPointer(), 
-		vsBlob->GetBufferSize(), nullptr, mVertexShader.GetAddressOf()));
+	HREXCEPT(mDevice->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, mVertexShader.GetAddressOf()));
 
 
-	// pixel shader
+	// Pixel shader
 	mPixelShader = nullptr;
-
 	if (!psFile.empty()) {
 		HREXCEPT(D3DReadFileToBlob(psFile.c_str(), psBlob.GetAddressOf()));
 		InitializeConstantBuffers(psBlob, mPixelBuffers);
-		HREXCEPT(mDevice->CreatePixelShader(psBlob->GetBufferPointer(), 
-			psBlob->GetBufferSize(), nullptr, mPixelShader.GetAddressOf()));
+		HREXCEPT(mDevice->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, mPixelShader.GetAddressOf()));
 	}
 
 	InitializeBlendState();
 	InitializeDepthState();
 }
 
+void Shader::SetBlendState(D3D11_BLEND srcBlend, D3D11_BLEND destBlend, D3D11_BLEND_OP blendOp, const float* factor, uint32_t mask)
+{
+	D3D11_BLEND_DESC blendDesc;
+	::ZeroMemory(&blendDesc, sizeof(blendDesc));
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+	for (uint8_t i = 0; i < 8; ++i) {
+		blendDesc.RenderTarget[i].BlendEnable = (srcBlend != D3D11_BLEND_ONE) || (destBlend != D3D11_BLEND_ZERO);
+		blendDesc.RenderTarget[i].SrcBlend = srcBlend;
+		blendDesc.RenderTarget[i].SrcBlendAlpha = srcBlend;
+		blendDesc.RenderTarget[i].DestBlend = destBlend;
+		blendDesc.RenderTarget[i].DestBlendAlpha = destBlend;
+		blendDesc.RenderTarget[i].BlendOp = blendOp;
+		blendDesc.RenderTarget[i].BlendOpAlpha = blendOp;
+		blendDesc.RenderTarget[i].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	}
+
+	HREXCEPT(mDevice->CreateBlendState(&blendDesc, mBlendState.ReleaseAndGetAddressOf()));
+	mBlendFactor = factor;
+	mBlendMask = mask;
+}
+
+void Shader::SetBlendState(D3D11_BLEND_DESC desc, const float* factor, uint32_t mask)
+{
+	mDevice->CreateBlendState(&desc, mBlendState.ReleaseAndGetAddressOf());
+	mBlendFactor = factor;
+	mBlendMask = mask;
+}
+
+
+void Shader::SetDepthState(bool enableDepth, bool writeDepth, bool enableStencil, unsigned int ref)
+{
+	D3D11_DEPTH_STENCIL_DESC desc;
+	::ZeroMemory(&desc, sizeof(desc));
+	desc.DepthEnable = enableDepth;
+	desc.DepthWriteMask = writeDepth ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+	desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	desc.StencilEnable = enableStencil;
+	desc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	desc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	desc.BackFace = desc.FrontFace;
+	mDevice->CreateDepthStencilState(&desc, mDepthState.ReleaseAndGetAddressOf());
+
+	mStencilRef = ref;
+}
+
+void Shader::SetDepthState(D3D11_DEPTH_STENCIL_DESC desc, unsigned int ref)
+{
+	mDevice->CreateDepthStencilState(&desc, mDepthState.ReleaseAndGetAddressOf());
+	mStencilRef = ref;
+}
+
+
+
 
 void Shader::InitializeInputLayout(ComPtr<ID3DBlob>& vsBlob)
 {
 	// Reflect shader info
 	ComPtr<ID3D11ShaderReflection> shaderReflection;
-	HREXCEPT(D3DReflect(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), 
-		IID_ID3D11ShaderReflection, (void**)shaderReflection.GetAddressOf()));
+	HREXCEPT(D3DReflect(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)shaderReflection.GetAddressOf()));
 
 	// Get shader info
 	D3D11_SHADER_DESC shaderDesc;
@@ -151,17 +239,16 @@ void Shader::InitializeConstantBuffers(ComPtr<ID3DBlob>& blob, std::vector<ComPt
 {
 	// Reflect shader info
 	ComPtr<ID3D11ShaderReflection> shaderReflection;
-	HREXCEPT(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), 
-		IID_ID3D11ShaderReflection, (void**)shaderReflection.GetAddressOf()));
+	HREXCEPT(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)shaderReflection.GetAddressOf()));
 
 	// Get shader info
 	D3D11_SHADER_DESC shaderDesc;
 	shaderReflection->GetDesc(&shaderDesc);
 
 	for (uint8_t i = 0; i < shaderDesc.ConstantBuffers; ++i) {
-		auto srcb = shaderReflection->GetConstantBufferByIndex(i);
+		auto shaderReflectionBuffer = shaderReflection->GetConstantBufferByIndex(i);
 		D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
-		srcb->GetDesc(&shaderBufferDesc);
+		shaderReflectionBuffer->GetDesc(&shaderBufferDesc);
 
 		// vertex shader constant buffer
 		D3D11_BUFFER_DESC bufferDesc;
@@ -179,47 +266,6 @@ void Shader::InitializeConstantBuffers(ComPtr<ID3DBlob>& blob, std::vector<ComPt
 }
 
 
-D3D11_BLEND_DESC Shader::DefaultBlendDesc() {
-	D3D11_BLEND_DESC blendDesc;
-	ZeroMemory(&blendDesc, sizeof(blendDesc));
-	blendDesc.AlphaToCoverageEnable = FALSE;
-	blendDesc.IndependentBlendEnable = FALSE;
-	for (uint8_t i = 0; i < 8; ++i) {
-		blendDesc.RenderTarget[i].BlendEnable = FALSE;
-		blendDesc.RenderTarget[i].SrcBlend = D3D11_BLEND_ONE;
-		blendDesc.RenderTarget[i].DestBlend = D3D11_BLEND_ZERO;
-		blendDesc.RenderTarget[i].BlendOp = D3D11_BLEND_OP_ADD;
-		blendDesc.RenderTarget[i].SrcBlendAlpha = D3D11_BLEND_ONE;
-		blendDesc.RenderTarget[i].DestBlendAlpha = D3D11_BLEND_ZERO;
-		blendDesc.RenderTarget[i].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		blendDesc.RenderTarget[i].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	}
-	return blendDesc;
-}
-
-D3D11_DEPTH_STENCIL_DESC Shader::DefaultDepthDesc()
-{
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
-	depthStencilDesc.DepthEnable = TRUE;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	depthStencilDesc.StencilEnable = FALSE;
-	depthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-	depthStencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	return depthStencilDesc;
-}
-
-
-
 void Shader::InitializeBlendState()
 {
 	mBlendMask = 0xFFFFFFFF;
@@ -233,62 +279,5 @@ void Shader::InitializeDepthState()
 {
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = DefaultDepthDesc();
 	HREXCEPT(mDevice->CreateDepthStencilState(&depthStencilDesc, mDepthState.GetAddressOf()));
-}
- 
-
-void Shader::SetBlendState(D3D11_BLEND srcBlend, D3D11_BLEND destBlend, D3D11_BLEND_OP blendOp, const float* factor, uint32_t mask)
-{
-	D3D11_BLEND_DESC blendDesc;
-	ZeroMemory(&blendDesc, sizeof(blendDesc));
-	blendDesc.AlphaToCoverageEnable = FALSE;
-	blendDesc.IndependentBlendEnable = FALSE;
-	for (uint8_t i = 0; i < 8; ++i) {
-		blendDesc.RenderTarget[i].BlendEnable = (srcBlend != D3D11_BLEND_ONE) || (destBlend != D3D11_BLEND_ZERO);
-		blendDesc.RenderTarget[i].SrcBlend = srcBlend;
-		blendDesc.RenderTarget[i].SrcBlendAlpha = srcBlend;
-		blendDesc.RenderTarget[i].DestBlend = destBlend;
-		blendDesc.RenderTarget[i].DestBlendAlpha = destBlend;
-		blendDesc.RenderTarget[i].BlendOp = blendOp;
-		blendDesc.RenderTarget[i].BlendOpAlpha = blendOp;
-		blendDesc.RenderTarget[i].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	}
-
-	HREXCEPT(mDevice->CreateBlendState(&blendDesc, mBlendState.ReleaseAndGetAddressOf()));
-	mBlendFactor = factor;
-	mBlendMask = mask;
-}
-
-void Shader::SetBlendState(D3D11_BLEND_DESC desc, const float* factor, uint32_t mask)
-{
-	mDevice->CreateBlendState(&desc, mBlendState.ReleaseAndGetAddressOf());
-	mBlendFactor = factor;
-	mBlendMask = mask;
-}
-
-
-void Shader::SetDepthState(bool enableDepth, bool writeDepth, bool enableStencil, unsigned int ref)
-{
-	D3D11_DEPTH_STENCIL_DESC desc;
-	ZeroMemory(&desc, sizeof(desc));
-	desc.DepthEnable = enableDepth;
-	desc.DepthWriteMask = writeDepth ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-	desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-	desc.StencilEnable = enableStencil;
-	desc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-	desc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
-	desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	desc.BackFace = desc.FrontFace;
-	mDevice->CreateDepthStencilState(&desc, mDepthState.ReleaseAndGetAddressOf());
-
-	mStencilRef = ref;
-}
-
-void Shader::SetDepthState(D3D11_DEPTH_STENCIL_DESC desc, unsigned int ref)
-{
-	mDevice->CreateDepthStencilState(&desc, mDepthState.ReleaseAndGetAddressOf());
-	mStencilRef = ref;
 }
 

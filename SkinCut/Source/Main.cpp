@@ -21,8 +21,8 @@
 
 SkinCut::Application gApp;
 
-static const uint32_t cWindowWidth = 1280;
-static const uint32_t cWindowHeight = 720;
+constexpr uint32_t WINDOW_WIDTH = 1280;
+constexpr uint32_t WINDOW_HEIGHT = 720;
 
 
 static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -98,7 +98,7 @@ static bool Initialize(HWND hwnd)
 	}
 
 	// Attempt initialization
-	if (!gApp.Initialize(hwnd, resourcePath)) {
+	if (!gApp.Init(hwnd, resourcePath)) {
 		::MessageBoxA(nullptr, "Initialization failed", "ERROR", MB_ICONERROR | MB_OK);
 		return false;
 	}
@@ -126,6 +126,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		
 	// Create window class
 	WNDCLASSEX wcex{};
+	::ZeroMemory(&wcex, sizeof(WNDCLASSEX));
 	wcex.lpszClassName = L"WINDOW_CLASS";
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -148,7 +149,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	RECT rectTaskbar;
 	LONG taskbarW = 0L;
 	LONG taskbarH = 0L;
-	HWND hwndTaskbar = FindWindow(L"Shell_traywnd", nullptr); // find taskbar
+	HWND hwndTaskbar = ::FindWindow(L"Shell_traywnd", nullptr); // find taskbar
 
 	if (hwndTaskbar && ::GetWindowRect(hwndTaskbar, &rectTaskbar)) {
 		taskbarW = rectTaskbar.right - rectTaskbar.left;
@@ -168,12 +169,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		}
 	}
 
-	int windowX = (::GetSystemMetrics(SM_CXSCREEN) - cWindowWidth  - taskbarW) / 2;
-	int windowY = (::GetSystemMetrics(SM_CYSCREEN) - cWindowHeight - taskbarH) / 2;
+	int windowX = (::GetSystemMetrics(SM_CXSCREEN) - WINDOW_WIDTH  - taskbarW) / 2;
+	int windowY = (::GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT - taskbarH) / 2;
 
 	// Create window
 	HWND hWnd = CreateWindowEx(WS_EX_CLIENTEDGE, L"WINDOW_CLASS", L"SkinCut", WS_OVERLAPPEDWINDOW, 
-		windowX, windowY, cWindowWidth, cWindowHeight, nullptr, nullptr, hInstance, nullptr);
+		windowX, windowY, WINDOW_WIDTH, WINDOW_HEIGHT, nullptr, nullptr, hInstance, nullptr);
 
 	if (!hWnd) {
 		::MessageBoxA(nullptr, "Window creation failed", "ERROR", MB_ICONERROR | MB_OK);

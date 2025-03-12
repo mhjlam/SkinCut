@@ -21,10 +21,10 @@ namespace SkinCut
 namespace Math
 {
 
-static const double cEpsilon = 1e-6; // 1e-6 = 0.000001
-static const double cOneThird = 1.0/3.0;
-static const double cPI = 3.1415926535897932384626433832795;
-static const double cTwoPI = 6.283185307179586476925286766559;
+constexpr double EPSILON = 1e-6; // 1e-6 = 0.000001
+constexpr double ONE_THIRD = 1.0/3.0;
+constexpr double PI = 3.1415926535897932384626433832795;
+constexpr double TWO_PI = 6.283185307179586476925286766559;
 
 struct Vector2;
 struct Vector3;
@@ -38,15 +38,14 @@ struct Quaternion;
 struct Quadrilateral;
 
 
-
 // Utility operations
 
-bool Equal(float x, float y, float ep = cEpsilon);							// returns true if x is within a margin of epsilon of y
-bool Bound(float s, float minimum, float maximum, float ep = cEpsilon);		// returns true if s is between min and max within a margin of epsilon
-bool Equal(const Vector3& v0, const Vector3& v1, float ep = cEpsilon);		// returns true if vectors are within a margin of epsilon of each other
+bool Equal(float x, float y, float ep = EPSILON);							// True if x is within a margin of epsilon of y
+bool Bound(float s, float minimum, float maximum, float ep = EPSILON);		// True if s is between min and max within a margin of epsilon
+bool Equal(const Vector3& v0, const Vector3& v1, float ep = EPSILON);		// True if vectors are within a margin of epsilon of each other
 
-float Sign(float f);														// returns -1 if negative; 0 if 0; +1 if positive
-float Clamp(float value, float minimum, float maximum);						// returns clamped value
+float Sign(float f);														// Returns -1 if negative; 0 if 0; +1 if positive
+float Clamp(float value, float minimum, float maximum);						// Returns clamped value
 
 
 
@@ -553,7 +552,7 @@ struct Matrix : public DirectX::XMFLOAT4X4
 	static void Transform(const Matrix& M, const Quaternion& rotation, Matrix& result);
 
 	static Matrix Identity();
-	static Matrix CreateTranslation(const Vector3& position);
+	static Matrix CreateTranslation(const Vector3& Position);
 	static Matrix CreateTranslation(float x, float y, float z);
 	static Matrix CreateScale(const Vector3& scales);
 	static Matrix CreateScale(float xs, float ys, float zs);
@@ -567,8 +566,8 @@ struct Matrix : public DirectX::XMFLOAT4X4
 	static Matrix CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane);
 	static Matrix CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane);
 	static Matrix CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane);
-	static Matrix CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up);
-	static Matrix CreateWorld(const Vector3& position, const Vector3& forward, const Vector3& up);
+	static Matrix CreateLookAt(const Vector3& Position, const Vector3& target, const Vector3& up);
+	static Matrix CreateWorld(const Vector3& Position, const Vector3& forward, const Vector3& up);
 	static Matrix CreateFromQuaternion(const Quaternion& quat);
 	static Matrix CreateFromYawPitchRoll(float yaw, float pitch, float roll);
 	static Matrix CreateShadow(const Vector3& lightDir, const Plane& plane);
@@ -676,7 +675,7 @@ struct Plane : public DirectX::XMFLOAT4
 	void Normalize(Plane& result) const;
 
 	float Dot(const Vector4& v) const;
-	float DotCoordinate(const Vector3& position) const;
+	float DotCoordinate(const Vector3& Position) const;
 	float DotNormal(const Vector3& normal) const;
 
 	// Static functions
@@ -3006,11 +3005,11 @@ inline Matrix Matrix::Identity()
 				  0.f, 0.f, 0.f, 1.f);
 }
 
-inline Matrix Matrix::CreateTranslation(const Vector3& position)
+inline Matrix Matrix::CreateTranslation(const Vector3& Position)
 {
 	using namespace DirectX;
 	Matrix R;
-	XMStoreFloat4x4(&R, XMMatrixTranslation(position.x, position.y, position.z));
+	XMStoreFloat4x4(&R, XMMatrixTranslation(Position.x, Position.y, Position.z));
 	return R;
 }
 
@@ -3130,7 +3129,7 @@ inline Matrix Matrix::CreateLookAt(const Vector3& eye, const Vector3& target, co
 	return R;
 }
 
-inline Matrix Matrix::CreateWorld(const Vector3& position, const Vector3& forward, const Vector3& up)
+inline Matrix Matrix::CreateWorld(const Vector3& Position, const Vector3& forward, const Vector3& up)
 {
 	using namespace DirectX;
 	XMVECTOR zaxis = XMVector3Normalize(XMVectorNegate(XMLoadFloat3(&forward)));
@@ -3143,7 +3142,7 @@ inline Matrix Matrix::CreateWorld(const Vector3& position, const Vector3& forwar
 	XMStoreFloat3(reinterpret_cast<XMFLOAT3*>(&R._21), yaxis);
 	XMStoreFloat3(reinterpret_cast<XMFLOAT3*>(&R._31), zaxis);
 	R._14 = R._24 = R._34 = 0.f;
-	R._41 = position.x; R._42 = position.y; R._43 = position.z;
+	R._41 = Position.x; R._42 = Position.y; R._43 = Position.z;
 	R._44 = 1.f;
 	return R;
 }
@@ -3322,11 +3321,11 @@ inline float Plane::Dot(const Vector4& v) const
 	return XMVectorGetX(XMPlaneDot(p, v0));
 }
 
-inline float Plane::DotCoordinate(const Vector3& position) const
+inline float Plane::DotCoordinate(const Vector3& Position) const
 {
 	using namespace DirectX;
 	XMVECTOR p = XMLoadFloat4(this);
-	XMVECTOR v0 = XMLoadFloat3(&position);
+	XMVECTOR v0 = XMLoadFloat3(&Position);
 	return XMVectorGetX(XMPlaneDotCoord(p, v0));
 }
 

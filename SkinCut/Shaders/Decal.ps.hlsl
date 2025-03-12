@@ -6,7 +6,7 @@
 
 struct PSIN
 {
-	float4 PositionSV : SV_POSITION;
+	float4 PositionSS : SV_POSITION;	// position screen-space
 	float4 PositionCS : TEXCOORD0;		// position in clip-space
 	float4 PositionVS : TEXCOORD1;		// position in view-space
 	float3 NormalVS   : TEXCOORD2;		// normal in view-space
@@ -14,9 +14,9 @@ struct PSIN
 
 cbuffer cb0 : register(b0)
 {
-	matrix InvWorld;
-	matrix InvView;
-	matrix InvProject;
+	matrix WorldInverse;
+	matrix ViewInverse;
+    matrix ProjectInverse;
 };
 
 
@@ -38,12 +38,11 @@ float4 main(PSIN input) : SV_TARGET
 	float x = depthUV.x * 2.0 - 1.0; // [-1,1]
 	float y = (1.0 - depthUV.y) * 2.0 - 1.0; // [-1,1]
 	float4 positionCS = float4(x, y, depth, 1.0f);
-	//float4 positionCS = float4(screenPosition.x, screenPosition.y, depth, 1.0f);
-	float4 positionVS = mul(positionCS, InvProject);
+    float4 positionVS = mul(positionCS, ProjectInverse);
 	positionVS = float4(positionVS.xyz / positionVS.w, 1.0);
 
-	float4 positionWS = mul(positionVS, InvView); // world-space
-	float4 positionOS = mul(positionWS, InvWorld); // decal object-space
+	float4 positionWS = mul(positionVS, ViewInverse); // world-space
+    float4 positionOS = mul(positionWS, WorldInverse); // decal object-space
 	clip(0.5 - abs(positionOS.xyz)); // remove pixels not located inside decal mesh
 
 	float3 decalNormal = normalize(input.NormalVS);
@@ -51,7 +50,6 @@ float4 main(PSIN input) : SV_TARGET
 	float3 ddyWp = ddy(positionWS.xyz);
 	float3 geometryNormal = -normalize(cross(ddyWp, ddxWp));
 	float angle = dot(geometryNormal, decalNormal);
-	//if (angle < 0.5) discard; // avoid projecting on steep angles
 
 	float2 decalUV = positionOS.xz + float2(0.5, 0.5);
 	return DecalTexture.Sample(LinearSampler, decalUV);

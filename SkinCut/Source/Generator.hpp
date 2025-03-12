@@ -6,7 +6,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Mathematics.hpp"
+#include "Math.hpp"
 
 
 using Microsoft::WRL::ComPtr;
@@ -18,7 +18,7 @@ namespace SkinCut
 	class Entity;
 	class Camera;
 	class Shader;
-	class Target;
+	class RenderTarget;
 	
 	class Generator
 	{
@@ -35,9 +35,8 @@ namespace SkinCut
 	public:
 		Generator(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context);
 
-		//std::shared_ptr<Target> GenerateBeckmann(std::wstring outname = L"");
-		std::shared_ptr<Target> GenerateStretch(std::shared_ptr<Entity>& model, std::wstring outname = L"");
-		std::shared_ptr<Target> GenerateWoundPatch(uint32_t width, uint32_t height, std::wstring outname = L"");
+		std::shared_ptr<RenderTarget> GenerateStretch(std::shared_ptr<Entity>& model, std::wstring outname = L"");
+		std::shared_ptr<RenderTarget> GenerateWoundPatch(uint32_t width, uint32_t height, std::wstring outname = L"");
 	};
 }
 

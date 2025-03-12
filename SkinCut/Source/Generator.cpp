@@ -3,16 +3,16 @@
 #include <wincodec.h>
 #include <d3dcompiler.h>
 
-#include "DirectXTex/DirectXTex.h"
-#include "DirectXTK/Inc/DDSTextureLoader.h"
+#include <DirectXTex/DirectXTex.h>
+#include <DirectXTK/Inc/DDSTextureLoader.h>
 
+#include "Math.hpp"
+#include "Util.hpp"
 #include "Camera.hpp"
 #include "Entity.hpp"
 #include "Shader.hpp"
-#include "Target.hpp"
-#include "Utility.hpp"
-#include "Structures.hpp"
-#include "Mathematics.hpp"
+#include "Structs.hpp"
+#include "RenderTarget.hpp"
 #include "VertexBuffer.hpp"
 
 
@@ -41,75 +41,7 @@ Generator::Generator(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& 
 }
 
 
-// std::shared_ptr<Target> Generator::GenerateBeckmann(std::wstring outname)
-// {
-// 	D3D11_TEXTURE2D_DESC texDesc;
-// 	ZeroMemory(&texDesc, sizeof(texDesc));
-// 	texDesc.ArraySize           = 1;
-// 	texDesc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
-// 	texDesc.CPUAccessFlags      = 0;
-// 	texDesc.Format              = DXGI_FORMAT_R32_FLOAT;
-// 	texDesc.Height              = 512;
-// 	texDesc.Width               = 512;
-// 	texDesc.MipLevels           = 1;
-// 	texDesc.MiscFlags           = 0;
-// 	texDesc.SampleDesc.Count    = 1;
-// 	texDesc.SampleDesc.Quality  = 0;
-// 	texDesc.Usage               = D3D11_USAGE_IMMUTABLE;
-// 
-// 	float* data = new float[512 * 512];
-// 
-// 	for (uint32_t x = 0; x < 512; ++x)
-// 	{
-// 		for (uint32_t y = 0; y < 512; ++y)
-// 		{
-// 			float ndoth = float(x) / float(512);
-// 			float m = float(y) / float(512);
-// 
-// 			// Convert the 0.0..1.0 ranges to be -1.0..+1.0
-// 			//ndoth = 2.0f * ndoth - 1.0f;
-// 
-// 			// Evaluate a Beckmann distribution for this element of the look-up table:
-// 			float r_sq = m * m;
-// 			float r_a = 1.0f / (4.0f * r_sq * pow(ndoth, 4));
-// 			float r_b = ndoth * ndoth - 1.0f;
-// 			float r_c = r_sq * ndoth * ndoth;
-// 
-// 			data[x + y * 512] = r_a * expf(r_b / r_c);
-// 
-// 			//float ph = 1.0f / (m*m * pow(ndoth, 4));
-// 			//float ta = std::tanf(std::acosf(ndoth));
-// 
-// 			//data[x + y * 512] = ph * expf(-((ta*ta)/(m*m)));
-// 		}
-// 	}
-// 
-// 	D3D11_SUBRESOURCE_DATA initialData;
-// 	initialData.pSysMem = (void*)data;
-// 	initialData.SysMemPitch = sizeof(float) * 512;
-// 	initialData.SysMemSlicePitch = 0;
-// 	delete data;
-// 
-// 	ComPtr<ID3D11Texture2D> texture = nullptr;
-// 	HREXCEPT(mDevice->CreateTexture2D(&texDesc, &initialData, &texture));
-// 
-// 
-// 	if (!outname.empty())
-// 	{
-// 		std::wstring ddsName = outname + L".dds";
-// 		std::wstring pngName = outname + L".png";
-// 
-// 		DirectX::ScratchImage image;
-// 		HREXCEPT(DirectX::CaptureTexture(mDevice.Get(), mContext.Get(), texture.Get(), image));
-// 		HREXCEPT(DirectX::SaveToDDSFile(*image.GetImage(0, 0, 0), 
-// 			DirectX::DDS_FLAGS_NONE, ddsName.c_str()));
-// 		HREXCEPT(DirectX::SaveToWICFile(*image.GetImage(0, 0, 0), 
-// 			DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, pngName.c_str(), nullptr));
-// 	}
-// }
-
-
-std::shared_ptr<Target> Generator::GenerateStretch(std::shared_ptr<Entity>& model, std::wstring outname)
+std::shared_ptr<RenderTarget> Generator::GenerateStretch(std::shared_ptr<Entity>& model, std::wstring outname)
 {
 	/*
 	STRETCH CORRECTION MAP
@@ -135,7 +67,7 @@ std::shared_ptr<Target> Generator::GenerateStretch(std::shared_ptr<Entity>& mode
 		Math::Color Color;
 	};
 
-	auto target = std::make_shared<Target>(mDevice, mContext, 512, 512, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
+	auto target = std::make_shared<RenderTarget>(mDevice, mContext, 512, 512, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
 
 	D3D11_VIEWPORT viewport{};
 	viewport.TopLeftX = 0.0F;
@@ -191,7 +123,7 @@ std::shared_ptr<Target> Generator::GenerateStretch(std::shared_ptr<Entity>& mode
 }
 
 
-std::shared_ptr<Target> Generator::GenerateWoundPatch(uint32_t width, uint32_t height, std::wstring outname)
+std::shared_ptr<RenderTarget> Generator::GenerateWoundPatch(uint32_t width, uint32_t height, std::wstring outname)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	HREXCEPT(mContext->Map(mShaderWoundPatch->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource));
@@ -199,12 +131,12 @@ std::shared_ptr<Target> Generator::GenerateWoundPatch(uint32_t width, uint32_t h
 	patchBuffer->Discolor = Color(0.58, 0.26, 0.29, 1.00); // float4(0.58, 0.27, 0.28, 1.00);
 	patchBuffer->LightColor = Color(0.89, 0.71, 0.65, 1.00); // float4(0.65, 0.36, 0.37, 1.00);
 	patchBuffer->InnerColor = Color(0.54, 0.00, 0.01, 1.00);
-	patchBuffer->OffsetX = Utility::Random(0.0f, 100.0f);
-	patchBuffer->OffsetY = Utility::Random(0.0f, 100.0f);
+	patchBuffer->OffsetX = Util::Random(0.0f, 100.0f);
+	patchBuffer->OffsetY = Util::Random(0.0f, 100.0f);
 	mContext->Unmap(mShaderWoundPatch->mPixelBuffers[0].Get(), 0);
 
 	auto buffer = std::make_unique<VertexBuffer>(mDevice);
-	auto target = std::make_shared<Target>(mDevice, mContext, width, height, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, false);
+	auto target = std::make_shared<RenderTarget>(mDevice, mContext, width, height, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, false);
 
 	mContext->IASetInputLayout(mShaderWoundPatch->mInputLayout.Get());
 	mContext->IASetPrimitiveTopology(buffer->mTopology);

@@ -18,43 +18,43 @@ namespace SkinCut
 		struct Vector4;
 	}
 
-	std::uint32_t hash_vector2(Math::Vector2 const& v);
-	std::uint32_t hash_vector3(Math::Vector3 const& v);
-	std::uint32_t hash_vector4(Math::Vector4 const& v);
+	uint32_t HashVector2(Math::Vector2 const& v);
+	uint32_t HashVector3(Math::Vector3 const& v);
+	uint32_t HashVector4(Math::Vector4 const& v);
 
 
 	struct IndexerHash
 	{
-		std::uint32_t operator()(const Indexer& i) const;
+		uint32_t operator()(const Indexer& i) const;
 		bool operator()(const Indexer& i0, const Indexer& i1) const;
 	};
 
 	struct VertexHash
 	{
-		std::uint32_t operator()(const Vertex& v) const;
+		uint32_t operator()(const Vertex& v) const;
 		bool operator()(const Vertex& v0, const Vertex& v1) const;
 	};
 
 	struct NodeHash
 	{
-		std::uint32_t operator()(const Node& n) const;
-		std::uint32_t operator()(const Node* n) const;
+		uint32_t operator()(const Node& n) const;
+		uint32_t operator()(const Node* n) const;
 		bool operator()(const Node& n0, const Node& n1) const;
 		bool operator()(const Node* n0, const Node* n1) const;
 	};
 
 	struct EdgeHash
 	{
-		std::uint32_t operator()(const Edge& e) const;
-		std::uint32_t operator()(const Edge* e) const;
+		uint32_t operator()(const Edge& e) const;
+		uint32_t operator()(const Edge* e) const;
 		bool operator()(const Edge& e0, const Edge& e1) const;
 		bool operator()(const Edge* e0, const Edge* e1) const;
 	};
 
 	struct FaceHash
 	{
-		std::uint32_t operator()(const Face& f) const;
-		std::uint32_t operator()(const Face* f) const;
+		uint32_t operator()(const Face& f) const;
+		uint32_t operator()(const Face* f) const;
 		bool operator()(const Face& f0, const Face& f1) const;
 		bool operator()(const Face* f0, const Face* f1) const;
 	};

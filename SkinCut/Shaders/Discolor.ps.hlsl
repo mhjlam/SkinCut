@@ -18,7 +18,7 @@ float4 main(float4 position : SV_POSITION, float2 texcoord : TEXCOORD) : SV_TARG
 {
 	// compute distance from cutline
 	float1 t = 0.0;
-	float1 dist = distance(Point0, Point1, texcoord, t);
+    float1 dist = distance(Point0, Point1, texcoord, t);
 	t = saturate(t) * 2.0 - 1.0; // first clamp to [0,1], then convert to [-1,1]
 
 	// compute maximum distances for inner and outer layers
@@ -29,13 +29,15 @@ float4 main(float4 position : SV_POSITION, float2 texcoord : TEXCOORD) : SV_TARG
 	float3 discolor = Discolor.rgb * float3(0.5,0.5,0.5);
 
 	// compute alpha intensity for outer layer
-	float1 range = 1.0 - (dist / range_outer);
+    float1 range = 1.0 - (dist / range_outer);
 	float1 noise = fbm(texcoord * 0.5, 4, 0.5, 64.0);
 	float1 alpha = clamp(noise, 0.0, range);
 
 	// increase alpha intensity for inner layer
-	if (dist <= range_inner)
-		alpha += (1.1 - (dist / range_inner));
+    if (dist <= range_inner)
+    {
+        alpha += (1.1 - (dist / range_inner));
+    }
 
 	return float4(discolor, alpha);
 }

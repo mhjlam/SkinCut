@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 
-#include "Mathematics.hpp"
+#include "Math.hpp"
 
 
 
@@ -13,125 +13,97 @@ namespace SkinCut
 	struct Face;
 	class Entity;
 
-	typedef int BOOL;
-
-
 	/* MESH DATA STRUCTURES */
 
 	struct Indexer
 	{
-		uint32_t pi; // position index
-		uint32_t ni; // normal vector index
-		uint32_t xi; // texture coordinate index
+		uint32_t PositionIndex; // position index
+		uint32_t NormalIndex;	// normal vector index
+		uint32_t TexCoordIndex; // texture coordinate index
 	};
 
 
 	struct Vertex
 	{
-		Math::Vector3 position;
-		Math::Vector2 texcoord;
-		Math::Vector3 normal;
-		Math::Vector4 tangent;
-		Math::Vector3 bitangent;
+		Math::Vector3 Position;
+		Math::Vector2 TexCoord;
+		Math::Vector3 Normal;
+		Math::Vector4 Tangent;
+		Math::Vector3 Bitangent;
 	};
 
 	struct VertexPosition
 	{
-		Math::Vector3 position;
+		Math::Vector3 Position;
 	};
 
 	struct VertexPositionTexture
 	{
-		Math::Vector3 position;
-		Math::Vector2 texcoord;
+		Math::Vector3 Position;
+		Math::Vector2 TexCoord;
 	};
 
 
 	struct Node
 	{
-		Math::Vector3 p;
+		Math::Vector3 Point;
 	};
 
 	struct Edge
 	{
-		std::array<Node*, 2> n;							// Incident nodes (unordered)
-		std::array<Face*, 2> f;							// Incident faces
-		std::array<std::pair<Node*, uint32_t>, 2> p;	// Endpoints <node,vertex> (directed)
+		std::array<Node*, 2> Nodes;							// Incident nodes (unordered)
+		std::array<Face*, 2> Faces;							// Incident faces
+		std::array<std::pair<Node*, uint32_t>, 2> Points;	// Endpoints <node,vertex> (directed)
 	};
 
 	struct Face
 	{
-		std::array<uint32_t, 3> v;						// Vertex indexes
-		std::array<Node*, 3>  n;						// Node references
-		std::array<Edge*, 3>  e;						// Edge references
+		std::array<uint32_t, 3> Verts;						// Vertex indexes
+		std::array<Node*, 3> Nodes;							// Node references
+		std::array<Edge*, 3> Edges;							// Edge references
 	};
 
 
 
-	struct Intersection									// Mesh surface intersection
+	struct Intersection										// Mesh surface intersection
 	{
-		bool hit;
-		float dist;										// Distance from ray origin to intersection
-		Math::Ray ray;									// Ray defined for selection
+		bool Hit;
+		float Distance;										// Distance from ray origin to intersection
+		Math::Ray Ray;										// Ray defined for selection
 
-		float nearz, farz;								// near and far plane of camera
-		Math::Vector3 pos_ws;							// Selected point in scene (world-space)
-		Math::Vector3 pos_os;							// Intersection point on mesh surface (object-space)
-		Math::Vector2 pos_ss;							// Selected point on image plane (screen-space)
-		Math::Vector2 pos_ts;							// Texture coordinates at intersection point (texture-space)
+		float NearZ;										// Near plane of camera
+		float FarZ;											// Far plane of camera
+		Math::Vector3 PositionWorld;						// Selected point in scene (world-space)
+		Math::Vector3 PositionObject;						// Intersection point on mesh surface (object-space)
+		Math::Vector2 PositionScreen;						// Selected point on image plane (screen-space)
+		Math::Vector2 PositionTexture;						// Texture coordinates at intersection point (texture-space)
 
-		Face* face;										// Intersected face
-		std::shared_ptr<Entity> model;					// Intersected model
+		SkinCut::Face* Face;								// Intersected face
+		std::shared_ptr<Entity> Model;						// Intersected model
 	};
 
 
-	struct Link											// Cutting line segment
+	struct Link												// Cutting line segment
 	{
-		Face* f;										// Face segment lies in
-		Edge* e0, *e1;									// Edges segment crosses
-		Math::Vector3 p0, p1;							// Endpoint positions
-		Math::Vector2 x0, x1;							// Endpoint texture coordinates
-		uint32_t rank;
+		SkinCut::Face* Face;								// Face that the segment lies in
+		SkinCut::Edge* Edge0;								// Edges that the segment crosses
+		SkinCut::Edge* Edge1;
+		Math::Vector3 Position0;							// Endpoint positions
+		Math::Vector3 Position1;							
+		Math::Vector2 TexCoord0;							// Endpoint texture coordinates
+		Math::Vector2 TexCoord1;
+		uint32_t Rank;
 		
-		Link() {
-			f = nullptr;
-			e0 = nullptr;
-			e1 = nullptr;
-			p0 = Math::Vector3(0.f);
-			p1 = Math::Vector3(0.f);
-			x0 = Math::Vector2(0.f);
-			x1 = Math::Vector2(0.f);
-			rank = -1;
-		}
-
-		Link(Face*& face, Math::Vector3 p_0, Math::Vector3 p_1, Math::Vector2 x_0, Math::Vector2 x_1, uint32_t r = -1) {
-			f = face;
-			e0 = nullptr;
-			e1 = nullptr;
-			p0 = p_0;
-			p1 = p_1;
-			x0 = x_0;
-			x1 = x_1;
-			rank = r;
-		}
-
-		Link(Face*& face, Edge*& e_0, Edge*& e_1, Math::Vector3 p_0, Math::Vector3 p_1, Math::Vector2 x_0, Math::Vector2 x_1, uint32_t r = -1) {
-			f = face;
-			e0 = e_0;
-			e1 = e_1;
-			p0 = p_0;
-			p1 = p_1;
-			x0 = x_0;
-			x1 = x_1;
-			rank = r;
-		}
+		Link();
+		Link(SkinCut::Face*& face, Math::Vector3 pos0, Math::Vector3 pos1, Math::Vector2 tc0, Math::Vector2 tc1, uint32_t rank = -1);
+		Link(SkinCut::Face*& face, Edge*& edge0, Edge*& edge1, Math::Vector3 pos0, Math::Vector3 pos1, Math::Vector2 tc0, Math::Vector2 tc1, uint32_t rank = -1);
 
 		bool operator==(const Link& other) {
-			return (f == other.f && p0 == other.p0 && p1 == other.p1);
+			return (Face == other.Face && Position0 == other.Position0 && Position1 == other.Position1);
 		}
 
 		friend bool operator<(const Link& first, const Link& second) {
-			return first.rank < second.rank;
+			return first.Rank < second.Rank;
 		}
 	};
 
@@ -148,6 +120,14 @@ namespace SkinCut
 			default: return "UNKNOWN";
 		}
 	}
+	inline const int ToInt(PickType mode) {
+		switch (mode) {
+			case PickType::PAINT : return 0;
+			case PickType::MERGE : return 1;
+			case PickType::CARVE : return 2;
+			default: return 0;
+		}
+	}
 
 	enum class SplitType { SPLIT3, SPLIT4, SPLIT6 };
 	inline const std::string ToString(SplitType mode) {
@@ -158,13 +138,21 @@ namespace SkinCut
 			default: return "UNKNOWN";
 		}
 	}
+	inline const int ToInt(SplitType mode) {
+		switch (mode) {
+			case SplitType::SPLIT3: return 0;
+			case SplitType::SPLIT4: return 1;
+			case SplitType::SPLIT6: return 2;
+			default: return 0;
+		}
+	}
 
 	enum class RenderType { KELEMEN, PHONG, LAMBERT };
 	inline const std::string ToString(RenderType mode) {
 		switch (mode) {
-			case RenderType::KELEMEN: return "KELEMEN";
-			case RenderType::PHONG: return "PHONG";
-			case RenderType::LAMBERT: return "LAMBERT";
+			case RenderType::KELEMEN:	return "KELEMEN";
+			case RenderType::PHONG:		return "PHONG";
+			case RenderType::LAMBERT:	return "LAMBERT";
 			default: return "UNKNOWN";
 		}
 	}
@@ -187,7 +175,7 @@ namespace SkinCut
 		std::string ResourcePath;
 
 		bool EnableWireframe;
-		bool EnableDashboard;
+		bool EnableInterface;
 
 		bool EnableColor;
 		bool EnableBumps;
@@ -219,21 +207,22 @@ namespace SkinCut
 	__declspec(align(16))
 	struct CB_LIGHTING_VS
 	{
-		DirectX::XMFLOAT4X4 WVP;
+		DirectX::XMFLOAT4X4 WorldViewProjection;
 		DirectX::XMFLOAT4X4 World;
-		DirectX::XMFLOAT4X4 WorldIT;
+		DirectX::XMFLOAT4X4 WorldInverseTranspose;
+
 		DirectX::XMFLOAT3 Eye;
 	};
 
 	__declspec(align(16))
 	struct CB_LIGHTING_PS_0
 	{
-		BOOL EnableColor;
-		BOOL EnableBumps;
-		BOOL EnableShadows;
-		BOOL EnableSpeculars;
-		BOOL EnableOcclusion;
-		BOOL EnableIrradiance;
+		int EnableColor;
+		int EnableBumps;
+		int EnableShadows;
+		int EnableSpeculars;
+		int EnableOcclusion;
+		int EnableIrradiance;
 
 		float Ambient;
 		float Fresnel;
@@ -251,6 +240,7 @@ namespace SkinCut
 		float FalloffStart;
 		float FalloffWidth;
 		float Attenuation;
+
 		DirectX::XMFLOAT4 ColorRGB;
 		DirectX::XMFLOAT4 Position;
 		DirectX::XMFLOAT4 Direction;
@@ -266,8 +256,9 @@ namespace SkinCut
 	__declspec(align(16))
 	struct CB_SCATTERING_PS
 	{
-		float FOVY;
+		float FieldOfViewY;
 		float Width;
+
 		DirectX::XMFLOAT2 Direction;
 		DirectX::XMFLOAT4 Kernel[9];
 	};
@@ -277,7 +268,7 @@ namespace SkinCut
 	struct CB_PHONG_VS
 	{
 		DirectX::XMFLOAT4X4 World;
-		DirectX::XMFLOAT4X4 WorldIT;
+		DirectX::XMFLOAT4X4 WorldInverseTranspose;
 		DirectX::XMFLOAT4X4 WorldViewProjection;
 
 		DirectX::XMFLOAT4 ViewPosition;
@@ -291,6 +282,7 @@ namespace SkinCut
 		float DiffuseColor;
 		float SpecularColor;
 		float SpecularPower;
+
 		DirectX::XMFLOAT4 LightColor;
 		DirectX::XMFLOAT4 LightDirection;
 	};
@@ -299,7 +291,7 @@ namespace SkinCut
 	__declspec(align(16))
 	struct CB_LAMBERTIAN_VS
 	{
-		DirectX::XMFLOAT4X4 WorldIT;
+		DirectX::XMFLOAT4X4 WorldInverseTranspose;
 		DirectX::XMFLOAT4X4 WorldViewProjection;
 	};
 
@@ -317,15 +309,15 @@ namespace SkinCut
 		DirectX::XMFLOAT4X4 World;
 		DirectX::XMFLOAT4X4 View;
 		DirectX::XMFLOAT4X4 Projection;
-		DirectX::XMFLOAT4   DecalNormal;
+		DirectX::XMFLOAT4 DecalNormal;
 	};
 
 	__declspec(align(16))
 	struct CB_DECAL_PS
 	{
-		DirectX::XMFLOAT4X4 InvWorld;
-		DirectX::XMFLOAT4X4 InvView;
-		DirectX::XMFLOAT4X4 InvProject;
+		DirectX::XMFLOAT4X4 WorldInverse;
+		DirectX::XMFLOAT4X4 ViewInverse;
+		DirectX::XMFLOAT4X4 ProjectInverse;
 	};
 
 	__declspec(align(16))
@@ -341,8 +333,8 @@ namespace SkinCut
 	__declspec(align(16))
 	struct CB_PAINT_PS
 	{
-		DirectX::XMFLOAT2 P0;
-		DirectX::XMFLOAT2 P1;
+		DirectX::XMFLOAT2 Point0;
+		DirectX::XMFLOAT2 Point1;
 
 		float Offset;
 		float CutLength;
@@ -355,6 +347,7 @@ namespace SkinCut
 		DirectX::XMFLOAT4 Discolor;
 		DirectX::XMFLOAT2 Point0;
 		DirectX::XMFLOAT2 Point1;
+
 		float MaxDistance;
 	};
 }

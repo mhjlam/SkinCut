@@ -1,5 +1,5 @@
 #include "Sampler.hpp"
-#include "Utility.hpp"
+#include "Util.hpp"
 
 
 using namespace SkinCut;
@@ -15,7 +15,7 @@ Sampler::Sampler(ComPtr<ID3D11Device>& device, D3D11_SAMPLER_DESC samplerDesc)
 Sampler::Sampler(ComPtr<ID3D11Device>& device, D3D11_FILTER filter, D3D11_COMPARISON_FUNC compFunc)
 {
 	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+	::ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
 	samplerDesc.Filter = filter;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -38,11 +38,10 @@ Sampler::Sampler(ComPtr<ID3D11Device>& device, D3D11_FILTER filter, D3D11_COMPAR
 }
 
 
-Sampler::Sampler(ComPtr<ID3D11Device>& device, D3D11_FILTER filter, 
-	D3D11_TEXTURE_ADDRESS_MODE addressMode, D3D11_COMPARISON_FUNC compFunc, uint32_t anisotropy)
+Sampler::Sampler(ComPtr<ID3D11Device>& device, D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE addressMode, D3D11_COMPARISON_FUNC compFunc, uint32_t anisotropy)
 {
 	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+	::ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
 	samplerDesc.Filter = filter;
 	samplerDesc.AddressU = addressMode;
 	samplerDesc.AddressV = addressMode;
@@ -69,7 +68,7 @@ Sampler::Sampler(ComPtr<ID3D11Device>& device, D3D11_FILTER filter,
 D3D11_SAMPLER_DESC Sampler::Point()
 {
 	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	::ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -88,7 +87,7 @@ D3D11_SAMPLER_DESC Sampler::Point()
 D3D11_SAMPLER_DESC Sampler::Linear()
 {
 	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	::ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -107,7 +106,7 @@ D3D11_SAMPLER_DESC Sampler::Linear()
 D3D11_SAMPLER_DESC Sampler::Anisotropic()
 {
 	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	::ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -126,7 +125,7 @@ D3D11_SAMPLER_DESC Sampler::Anisotropic()
 D3D11_SAMPLER_DESC Sampler::Comparison()
 {
 	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	::ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;

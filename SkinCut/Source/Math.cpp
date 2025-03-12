@@ -1,4 +1,4 @@
-﻿#include "Mathematics.hpp"
+﻿#include "Math.hpp"
 
 #include <array>
 #include <cmath>
@@ -23,17 +23,12 @@ bool Math::Equal(float x, float y, float ep)
 bool Math::Equal(const Math::Vector3& v0, const Math::Vector3& v1, float ep)
 {
 	return DirectX::XMVector3NearEqual(v0, v1, DirectX::XMLoadFloat(&ep));
-	//return (std::abs(v1.x - v0.x) <= ep && std::abs(v1.y - v0.y) <= ep && std::abs(v1.z - v0.z) <= ep);
 }
 
 bool Math::Bound(float s, float minimum, float maximum, float ep)
 {
-	if ((s > minimum) && (s < maximum)) {
-		return true;
-	}
-	if ((minimum - ep) < s && s < (maximum + ep)) {
-		return true;
-	}
+	if ((s > minimum) && (s < maximum)) { return true; }
+	if ((minimum - ep) < s && s < (maximum + ep)) { return true; }
 	return false;
 }
 
@@ -104,6 +99,9 @@ void Math::Barycentric(Vector3& p, Vector3& a, Vector3& b, Vector3& c, float &u,
 	// 	u = Vector3::Dot(n, na) * ndotn;
 	// 	v = Vector3::Dot(n, nb) * ndotn;
 	// 	w = 1.0f - u - v;
+	//
+	// NB: If p lies in the interior of the triangle, all of its barycentric coordinates lie in range [0,1].
+	// return (v >= 0.0f) && (w >= 0.0f) && ((v + w) <= 1.0f);
 
 	// Ericson, Christer. Real-time collision detection. CRC Press, 2004. Section 3.4 (pp. 46-52).
 	Vector3 v0 = b - a;
@@ -127,19 +125,16 @@ void Math::Barycentric(Vector3& p, Vector3& a, Vector3& b, Vector3& c, float &u,
 	if (Equal(v, 1.0f, 0.0001f)) v = 1.0f;
 	if (Equal(w, 0.0f, 0.0001f)) w = 0.0f;
 	if (Equal(w, 1.0f, 0.0001f)) w = 1.0f;
-
-	// If p lies in the interior of the triangle, all of its barycentric coordinates lie in range [0,1].
-	// return (v >= 0.0f) && (w >= 0.0f) && ((v + w) <= 1.0f);
 }
 
 
 Math::Ray Math::CreateRay(Vector2& screenPos, Vector2& viewPort, Matrix& projection, Matrix& view)
 {
-	// screen space near / far
+	// Screen space near / far
 	DirectX::XMVECTOR near = DirectX::XMVectorSet(screenPos.x, screenPos.y, 0, 1);
 	DirectX::XMVECTOR far = DirectX::XMVectorSet(screenPos.x, screenPos.y, 1, 1);
 
-	// perform reverse viewport transform to get point in normalized device coordinates
+	// Perform reverse viewport transform to get point in normalized device coordinates
 	DirectX::XMVECTOR scale = DirectX::XMVectorSet(viewPort.x * 0.5f, -viewPort.y * 0.5f, 1.0f, 1.0f);
 	scale = DirectX::XMVectorReciprocal(scale);
 
@@ -148,7 +143,7 @@ Math::Ray Math::CreateRay(Vector2& screenPos, Vector2& viewPort, Matrix& project
 	near = DirectX::XMVectorMultiplyAdd(near, scale, offset);
 	far = DirectX::XMVectorMultiplyAdd(far, scale, offset);
 
-	// multiply by inverse world view projection matrix to get point in object space
+	// Multiply by inverse world view projection matrix to get point in object space
 	DirectX::XMMATRIX transform = DirectX::XMMatrixMultiply(view, projection); // world matrix is identity matrix
 	transform = DirectX::XMMatrixInverse(nullptr, transform);
 
@@ -203,7 +198,7 @@ bool Math::RayTriangleIntersection(Ray& ray, const Triangle& triangle, float& t,
 	// if determinant is near zero, ray is parallel to triangle
 	Vector3 P = Vector3::Cross(ray.direction, E2);
 	float det = Vector3::Dot(E1, P);
-	if (det < cEpsilon) return false;
+	if (det < EPSILON) return false;
 
 	// compute u and test bounds
 	Vector3 T = ray.origin - triangle.v0;
@@ -246,7 +241,7 @@ bool Math::RayQuadIntersection(const Ray& ray, const Quadrilateral& quad, float&
 	// if determinant is near zero, ray is parallel to quadrilateral
 	Vector3 P = Vector3::Cross(ray.direction, E2);
 	float det = Vector3::Dot(E1, P);
-	if (det < cEpsilon) return false;
+	if (det < EPSILON) return false;
 
 	float invdet = 1 / det;
 
@@ -307,7 +302,7 @@ bool Math::RayQuadIntersection(const Ray& ray, const Quadrilateral& quad, float&
 	Vector3 P = Vector3::Cross(ray.direction, E03);
 
 	float det = Vector3::Dot(E01, P);
-	if (abs(det) < cEpsilon) return false;
+	if (abs(det) < EPSILON) return false;
 
 	float detInv = 1 / det;
 
@@ -315,24 +310,20 @@ bool Math::RayQuadIntersection(const Ray& ray, const Quadrilateral& quad, float&
 
 	float alpha = Vector3::Dot(T, P) * detInv;
 	if (alpha < 0) return false;
-	// if (alpha > 1.0) return false; // Use for vertex reordering
 
 	Vector3 Q = Vector3::Cross(T, E01);
 
 	float beta = Vector3::Dot(ray.direction, Q) * detInv;
-	if (beta < 0.0) return false;
-	// if (beta > 1.0) return false; // Use for vertex reordering
+	if (beta < 0.0) { return false; }
 
 	if ((alpha + beta) > 1.0) {
-		// Rejects rays that intersect the plane of q either on the
-		// left of the line V11V10 or on the right of the line V11V01.
-
+		// Reject rays that intersect the plane of q either on the left of the line V11V10 or on the right of the line V11V01.
 		Vector3 E23 = quad.v3 - quad.v2;
 		Vector3 E21 = quad.v1 - quad.v2;
 		Vector3 P_prime = Vector3::Cross(ray.direction, E21);
 
 		float det_prime = Vector3::Dot(E23, P_prime);
-		if (abs(det_prime) < cEpsilon) return false;
+		if (abs(det_prime) < EPSILON) return false;
 
 		float inv_det_prime = 1 / det_prime;
 
@@ -353,7 +344,7 @@ bool Math::RayQuadIntersection(const Ray& ray, const Quadrilateral& quad, float&
 	if (t < 0) return false;
 
 	// Compute the barycentric coordinates of the fourth vertex.
-	// These do not depend on the ray, and can be precomputed and stored with the quadrilateral. 
+	// These do not depend on the ray, and can be precomputed and stored with the quadrilateral.
 
 	float alpha_11, beta_11;
 	Vector3 E02 = quad.v2 - quad.v1;
@@ -373,16 +364,16 @@ bool Math::RayQuadIntersection(const Ray& ray, const Quadrilateral& quad, float&
 	}
 
 	// Compute the bilinear coordinates of the intersection point (wrt the quadrilateral).
-	if (abs(alpha_11 - 1) < cEpsilon) { // q is a trapezium
+	if (abs(alpha_11 - 1) < EPSILON) { // q is a trapezium
 		u = alpha;
-		if (abs(beta_11 - 1) < cEpsilon) {
+		if (abs(beta_11 - 1) < EPSILON) {
 			v = beta; // q is a parallelogram}
 		}
 		else {
 			v = beta / ((u * (beta_11 - 1)) + 1); // q is a trapezium
 		}
 	}
-	else if (abs(beta_11 - 1) < cEpsilon) { // q is a trapezium
+	else if (abs(beta_11 - 1) < EPSILON) { // q is a trapezium
 		v = beta;
 		u = alpha / ((v * (alpha_11 - 1)) + 1);
 	}
@@ -411,7 +402,7 @@ bool Math::RayPlaneIntersection(const Ray& ray, const Plane& plane, float& t)
 	Vector3 p0 = n * -plane.w; // point on the plane
 
 	float denom = Vector3::Dot(n, ray.direction);
-	if (std::abs(denom) > cEpsilon) {
+	if (std::abs(denom) > EPSILON) {
 		t = Vector3::Dot(p0 - ray.origin, n) / denom;
 		return (t >= 0);
 	}
@@ -423,10 +414,10 @@ bool Math::RaySphereIntersection(Ray& ray, Sphere& sphere, float& t)
 {
 	Vector3 l = sphere.center - ray.origin;
 	float tca = Vector3::Dot(l, ray.direction);
-	if (tca < 0) return false;
+	if (tca < 0) { return false; }
 
 	float d2 = Vector3::Dot(l, l) - tca * tca;
-	if (d2 > sphere.radius*sphere.radius) return false;
+	if (d2 > sphere.radius * sphere.radius) { return false; }
 
 	float thc = sqrt(sphere.radius*sphere.radius - d2);
 	t = tca - thc;
@@ -470,9 +461,9 @@ bool Math::SegmentPointIntersection(Vector3& p0, Vector3& p1, Vector3& p)
 	e01 /= len; // normalize e01
 
 	float t = Vector3::Dot(e01, p-p0); // project p->p0 onto p0->p1
-	if (t < 0 || t > len) return false;
+	if (t < 0 || t > len) { return false; }
 	float d = Vector3::Distance(p, p0 + (e01 * t));
-	return (d < cEpsilon);
+	return (d < EPSILON);
 }
 
 
@@ -544,7 +535,7 @@ bool Math::SegmentPolygonIntersection(Vector3& p0, Vector3& p1, std::vector<Vect
 		e0.y = polygon[i+1].y - polygon[i].y;
 		e0.z = polygon[i+1].z - polygon[i].z;
 
-		if (e0.Length() > 0.0) break;
+		if (e0.Length() > 0.0) { break; }
 	}
 		
 	for (j = i; j < npoints-1; j++) {
@@ -552,17 +543,17 @@ bool Math::SegmentPolygonIntersection(Vector3& p0, Vector3& p1, std::vector<Vect
 		e1.y = polygon[j+1].y - polygon[j].y;
 		e1.z = polygon[j+1].z - polygon[j].z;
 
-		if (e1.Length() > 0.0) break;
+		if (e1.Length() > 0.0) { break; }
 	}
 	
 	// Degenerate polygon.
-	if (j == (npoints-1)) return false;
+	if (j == (npoints - 1)) { return false; }
 
 	// Compute plane normal.
 	Vector3 normal = Vector3::Cross(e0, e1);
 	
 	// Degenerate polygon.
-	if (normal.Length() == 0.0) return false;
+	if (normal.Length() == 0.0) { return false; }
 
 	// Compute plane D constant (distance from origin).
 	float d = Vector3::Dot(normal, polygon[0]);
@@ -574,13 +565,13 @@ bool Math::SegmentPolygonIntersection(Vector3& p0, Vector3& p1, std::vector<Vect
 	float pnormal = Vector3::Dot(normal, direction);
 	
 	// Segment is parallel to plane. 
-	if (pnormal == 0.0) return false;
+	if (pnormal == 0.0) { return false; }
 
 	// Distance along the segment that the intersection occurs.
 	float t = (d - Vector3::Dot(normal, p0)) / pnormal;
 
 	// Segment intersects the plane behind the segment's start or exceeds the segment's length.
-	if (t < 0.0 || t > 1.0) return false;
+	if (t < 0.0 || t > 1.0) { return false; }
 
 	// Segment intersects the plane; find the intersection point.
 	point = Vector3::Lerp(p0, p1, t);
@@ -596,12 +587,10 @@ bool Math::SegmentPolygonIntersection(Vector3& p0, Vector3& p1, std::vector<Vect
 	float pnormal_z = std::abs(normal.z);
 
 	if (pnormal_x > pnormal_y) {
-		if (pnormal_x < pnormal_z) axis = Z_AXIS;
-		else axis = X_AXIS;
+		axis = (pnormal_x < pnormal_z) ? Z_AXIS : X_AXIS;
 	}
 	else {
-		if (pnormal_y < pnormal_z) axis = Z_AXIS;
-		else axis = Y_AXIS;
+		axis = (pnormal_y < pnormal_z) ? Z_AXIS : Y_AXIS;
 	}
 	
 	for (i = 0; i < npoints; i++) {
@@ -629,19 +618,18 @@ bool Math::SegmentPolygonIntersection(Vector3& p0, Vector3& p1, std::vector<Vect
 
 	for (i = 0; i < npoints; i++) {
 		j = i+1;
-		if (j == npoints) j = 0;
+		if (j == npoints) { j = 0; }
 
 		bool nsh = (vcoord[j] >= 0.0);
 
 		if (sh != nsh) {
-			if ((ucoord[i] > 0.0) && (ucoord[j] > 0.0)) {
-				// Line crosses u+.
-				crossings++;
+			if ((ucoord[i] > 0.0) && (ucoord[j] > 0.0)) { 
+				crossings++; // Line crosses u+
 			}
 			else if ((ucoord[i] > 0.0) || (ucoord[j] > 0.0)) {
-				// Compute intersection on u axis.
+				// Compute intersection on u axis
 				float u_intersection = ucoord[i] - vcoord[i] * (ucoord[j] - ucoord[i]) / (vcoord[j] - vcoord[i]);
-				if (u_intersection > 0) crossings++; // line crosses u+.
+				if (u_intersection > 0) { crossings++; } // line crosses u+
 			}
 			sh = nsh;
 		}
@@ -669,21 +657,18 @@ static bool TriangleIntervals(
 	if (d[1] * d[2] > 0) { // dv[1] and dv[2] are on the same side, dv[0] is on the other side
 		t1 = p[0] + (p[1] - p[0]) * (d[0] / (d[0] - d[1]));
 		t2 = p[0] + (p[2] - p[0]) * (d[0] / (d[0] - d[2]));
-
 		p1 = v[0] + (v[1] - v[0]) * (d[0] / (d[0] - d[1]));
 		p2 = v[0] + (v[2] - v[0]) * (d[0] / (d[0] - d[2]));
 	}
 	else if (d[0] * d[2] > 0) { // dv[0] and dv[2] are on the same side, dv[1] is on the other side
 		t1 = p[1] + (p[0] - p[1]) * (d[1] / (d[1] - d[0]));
 		t2 = p[1] + (p[2] - p[1]) * (d[1] / (d[1] - d[2]));
-
 		p1 = v[1] + (v[0] - v[1]) * (d[1] / (d[1] - d[0]));
 		p2 = v[1] + (v[2] - v[1]) * (d[1] / (d[1] - d[2]));
 	}
 	else if (d[0] * d[1] > 0) { // dv[0] and dv[1] are on the same side, dv[2] is on the other side
 		t1 = p[2] + (p[0] - p[2]) * (d[2] / (d[2] - d[0]));
 		t2 = p[2] + (p[1] - p[2]) * (d[2] / (d[2] - d[1]));
-
 		p1 = v[2] + (v[0] - v[2]) * (d[2] / (d[2] - d[0]));
 		p2 = v[2] + (v[1] - v[2]) * (d[2] / (d[2] - d[1]));
 	}
@@ -692,22 +677,18 @@ static bool TriangleIntervals(
 	else if (d[0] != 0) { // dv[0] is not coplanar with dv[1] and dv[2]
 		t1 = p[0] + (p[1] - p[0]) * (d[0] / (d[0] - d[1]));
 		t2 = p[0] + (p[2] - p[0]) * (d[0] / (d[0] - d[2]));
-
 		p1 = v[0] + (v[1] - v[0]) * (d[0] / (d[0] - d[1]));
 		p2 = v[0] + (v[2] - v[0]) * (d[0] / (d[0] - d[2]));
 	}
 	else if (d[1] != 0) { // dv[1] is not coplanar with dv[0] and dv[2]
 		t1 = p[1] + (p[0] - p[1]) * (d[1] / (d[1] - d[0]));
 		t2 = p[1] + (p[2] - p[1]) * (d[1] / (d[1] - d[2]));
-
 		p1 = v[1] + (v[0] - v[1]) * (d[1] / (d[1] - d[0]));
 		p2 = v[1] + (v[2] - v[1]) * (d[1] / (d[1] - d[2]));
 	}
-	else if (d[2] != 0) // dv[2] is not coplanar with dv[0] and dv[1]
-	{
+	else if (d[2] != 0) { // dv[2] is not coplanar with dv[0] and dv[1]
 		t1 = p[2] + (p[0] - p[2]) * (d[2] / (d[2] - d[0]));
 		t2 = p[2] + (p[1] - p[2]) * (d[2] / (d[2] - d[1]));
-
 		p1 = v[2] + (v[0] - v[2]) * (d[2] / (d[2] - d[0]));
 		p2 = v[2] + (v[1] - v[2]) * (d[2] / (d[2] - d[1]));
 	}
@@ -744,36 +725,30 @@ static bool QuadIntervals(std::array<Math::Vector3, 4>& v, std::array<float, 4>&
 	float sd2 = Math::Sign(d[2]);
 	float sd3 = Math::Sign(d[3]);
 
-	if (d[0] * d[1] * d[2] * d[3] == 0) {
-		return true; // coplanar
-	}
+	if (d[0] * d[1] * d[2] * d[3] == 0) { return true; } // coplanar
 
 	// Three vertices on one side, the remaining on the other side (or on the plane)
 	else if (sd0 == sd1 && sd1 == sd3 && sd3 != sd2) {
 		t1 = p[2] + (p[1] - p[2]) * (d[2] / (d[2] - d[1]));	// t1 = v1->v2
 		t2 = p[2] + (p[3] - p[2]) * (d[2] / (d[2] - d[3]));	// t2 = v3->v2
-
 		p1 = v[2] + (v[1] - v[2]) * (d[2] / (d[2] - d[1]));
 		p2 = v[2] + (v[3] - v[2]) * (d[2] / (d[2] - d[3]));
 	}
 	else if (sd1 == sd2 && sd2 == sd0 && sd0 != sd3) {
 		t1 = p[3] + (p[2] - p[3]) * (d[3] / (d[3] - d[2]));	// t1 = v2->v3
 		t2 = p[3] + (p[0] - p[3]) * (d[3] / (d[3] - d[0]));	// t2 = v0->v3
-
 		p1 = v[3] + (v[2] - v[3]) * (d[3] / (d[3] - d[2]));
 		p2 = v[3] + (v[0] - v[3]) * (d[3] / (d[3] - d[0]));
 	}
 	else if (sd2 == sd3 && sd3 == sd1 && sd1 != sd0) {
 		t1 = p[0] + (p[3] - p[0]) * (d[0] / (d[0] - d[3]));	// t1 = v3->v0
 		t2 = p[0] + (p[1] - p[0]) * (d[0] / (d[0] - d[1]));	// t2 = v1->v0
-
 		p1 = v[0] + (v[3] - v[0]) * (d[0] / (d[0] - d[3]));
 		p2 = v[0] + (v[1] - v[0]) * (d[0] / (d[0] - d[1]));
 	}
 	else if (sd3 == sd0 && sd0 == sd2 && sd2 != sd1) {
 		t1 = p[1] + (p[0] - p[1]) * (d[1] / (d[1] - d[0]));	// t1 = v0->v1
 		t2 = p[1] + (p[2] - p[1]) * (d[1] / (d[1] - d[2]));	// t2 = v2->v1
-
 		p1 = v[1] + (v[0] - v[1]) * (d[1] / (d[1] - d[0]));
 		p2 = v[1] + (v[2] - v[1]) * (d[1] / (d[1] - d[2]));
 	}
@@ -782,14 +757,12 @@ static bool QuadIntervals(std::array<Math::Vector3, 4>& v, std::array<float, 4>&
 	else if (sd0 == sd1 && sd2 == sd3 && sd0 != sd2) { // v0 and v1 on one side, v2 and v3 on the other
 		t1 = p[2] + (p[1] - p[2]) * (d[2] / (d[2] - d[1]));	// t1 = v1->v2
 		t2 = p[3] + (p[0] - p[3]) * (d[3] / (d[3] - d[0]));	// t2 = v0->v3
-
 		p1 = v[2] + (v[1] - v[2]) * (d[2] / (d[2] - d[1]));
 		p2 = v[3] + (v[0] - v[3]) * (d[3] / (d[3] - d[0]));
 	}
 	else if (sd1 == sd2 && sd3 == sd0 && sd1 != sd3) { // v1 and v2 on one side, v2 and v3 on the other
 		t1 = p[1] + (p[0] - p[1]) * (d[1] / (d[1] - d[0]));	// t1 = v0->v1
 		t2 = p[2] + (p[3] - p[2]) * (d[2] / (d[2] - d[3]));	// t2 = v3->v2
-
 		p1 = v[1] + (v[0] - v[1]) * (d[1] / (d[1] - d[0]));
 		p2 = v[2] + (v[3] - v[2]) * (d[2] / (d[2] - d[3]));
 	}
@@ -827,12 +800,12 @@ bool Math::TriangleTriangleIntersection(Triangle& triangle0, Triangle& triangle1
 	dv2[1] = (plane0.Normal()).Dot(triangle1.v1) + plane0.D();
 	dv2[2] = (plane0.Normal()).Dot(triangle1.v2) + plane0.D();
 
-	if (std::fabs(dv2[0]) < cEpsilon) dv2[0] = 0;
-	if (std::fabs(dv2[1]) < cEpsilon) dv2[1] = 0;
-	if (std::fabs(dv2[2]) < cEpsilon) dv2[2] = 0;
+	if (std::fabs(dv2[0]) < EPSILON) { dv2[0] = 0; }
+	if (std::fabs(dv2[1]) < EPSILON) { dv2[1] = 0; }
+	if (std::fabs(dv2[2]) < EPSILON) { dv2[2] = 0; }
 
 	// no intersection if all have same sign and do not equal zero
-	if (dv2[0] * dv2[1] > 0 && dv2[0] * dv2[2] > 0) return false;
+	if (dv2[0] * dv2[1] > 0 && dv2[0] * dv2[2] > 0) { return false; }
 
 	plane1.Normal((triangle1.v1-triangle1.v0).Cross(triangle1.v2-triangle1.v0));
 	plane1.D(-(plane1.Normal()).Dot(triangle1.v0));
@@ -841,12 +814,12 @@ bool Math::TriangleTriangleIntersection(Triangle& triangle0, Triangle& triangle1
 	dv1[1] = (plane1.Normal()).Dot(triangle0.v1) + plane1.D();
 	dv1[2] = (plane1.Normal()).Dot(triangle0.v2) + plane1.D();
 
-	if (std::fabs(dv1[0]) < cEpsilon) dv1[0] = 0;
-	if (std::fabs(dv1[1]) < cEpsilon) dv1[1] = 0;
-	if (std::fabs(dv1[0]) < cEpsilon) dv1[2] = 0;
+	if (std::fabs(dv1[0]) < EPSILON) { dv1[0] = 0; }
+	if (std::fabs(dv1[1]) < EPSILON) { dv1[1] = 0; }
+	if (std::fabs(dv1[0]) < EPSILON) { dv1[2] = 0; }
 
 	// no intersection if all have same sign and do not equal zero
-	if (dv1[0] * dv1[1] > 0 && dv1[0] * dv1[2] > 0) return false;
+	if (dv1[0] * dv1[1] > 0 && dv1[0] * dv1[2] > 0) { return false; }
 
 	// Direction of the intersection line
 	Vector3 direction = (plane0.Normal()).Cross(plane1.Normal());
@@ -856,9 +829,9 @@ bool Math::TriangleTriangleIntersection(Triangle& triangle0, Triangle& triangle1
 	float Dx = std::fabs(direction.x);
 	float Dy = std::fabs(direction.y);
 	float Dz = std::fabs(direction.z);
-	if (Dx > max) max = Dx, axis = AXIS_X;
-	if (Dy > max) max = Dy, axis = AXIS_Y;
-	if (Dz > max) max = Dz, axis = AXIS_Z;
+	if (Dx > max) { max = Dx; axis = AXIS_X; }
+	if (Dy > max) { max = Dy; axis = AXIS_Y; }
+	if (Dz > max) { max = Dz; axis = AXIS_Z; }
 
 	// Axis-aligned projection of vertices onto L
 	switch (axis) {
@@ -892,7 +865,7 @@ bool Math::TriangleTriangleIntersection(Triangle& triangle0, Triangle& triangle1
 
 	// Compute interval and intersection points for T1
 	bool coplanar = TriangleIntervals(v, pv1, dv1, t1, t2, p1, p2);
-	if (coplanar) return false; // handle coplanar triangles separately
+	if (coplanar) { return false; } // handle coplanar triangles separately
 
 	// Compute interval and intersection points for T2
 	TriangleIntervals(w, pv2, dv2, t3, t4, p3, p4);
@@ -906,9 +879,7 @@ bool Math::TriangleTriangleIntersection(Triangle& triangle0, Triangle& triangle1
 	}
 
 	// Intervals do not overlap
-	if (t2 < t3 || t4 < t1) {
-		return false;
-	}
+	if (t2 < t3 || t4 < t1) { return false; }
 
 	// Determine the actual segment of intersection
 	if (t3 < t1) {
@@ -949,13 +920,13 @@ bool Math::TriangleQuadIntersection(Triangle& triangle, Quadrilateral& quad, Vec
 	qd[2] = Vector3::Dot(tpn, quad.v2) + tpd;
 	qd[3] = Vector3::Dot(tpn, quad.v3) + tpd;
 
-	if (std::fabs(qd[0]) < cEpsilon) qd[0] = 0;
-	if (std::fabs(qd[1]) < cEpsilon) qd[1] = 0;
-	if (std::fabs(qd[2]) < cEpsilon) qd[2] = 0;
-	if (std::fabs(qd[3]) < cEpsilon) qd[3] = 0;
+	if (std::fabs(qd[0]) < EPSILON) { qd[0] = 0; }
+	if (std::fabs(qd[1]) < EPSILON) { qd[1] = 0; }
+	if (std::fabs(qd[2]) < EPSILON) { qd[2] = 0; }
+	if (std::fabs(qd[3]) < EPSILON) { qd[3] = 0; }
 
-	// no intersection if all have same sign and do not equal zero
-	if (qd[0] * qd[1] > 0 && qd[0] * qd[2] > 0) return false;
+	// No intersection if all have same sign and do not equal zero
+	if (qd[0] * qd[1] > 0 && qd[0] * qd[2] > 0) { return false; }
 
 
 	// Quadrilateral plane
@@ -966,12 +937,12 @@ bool Math::TriangleQuadIntersection(Triangle& triangle, Quadrilateral& quad, Vec
 	td[1] = Vector3::Dot(qpn, triangle.v1) + qpd;
 	td[2] = Vector3::Dot(qpn, triangle.v2) + qpd;
 
-	if (std::fabs(td[0]) < cEpsilon) td[0] = 0;
-	if (std::fabs(td[1]) < cEpsilon) td[1] = 0;
-	if (std::fabs(td[0]) < cEpsilon) td[2] = 0;
+	if (std::fabs(td[0]) < EPSILON) { td[0] = 0; }
+	if (std::fabs(td[1]) < EPSILON) { td[1] = 0; }
+	if (std::fabs(td[0]) < EPSILON) { td[2] = 0; }
 
-	// no intersection if all have same sign and do not equal zero
-	if (td[0] * td[1] > 0 && td[0] * td[2] > 0) return false;
+	// No intersection if all have same sign and do not equal zero
+	if (td[0] * td[1] > 0 && td[0] * td[2] > 0) { return false; }
 
 
 	// Compute normalized direction of the intersection segment

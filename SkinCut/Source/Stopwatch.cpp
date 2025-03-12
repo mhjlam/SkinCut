@@ -1,55 +1,55 @@
-#include "Stopwatch.hpp"
+#include "StopWatch.hpp"
 
 #include <iomanip>
 #include <functional>
 
-#include "Utility.hpp"
+#include "Util.hpp"
 
 
 using namespace SkinCut;
 
 
 
-Stopwatch::Stopwatch(CLOCKTYPE ct) : mClockType(ct)
+StopWatch::StopWatch(CLOCKTYPE ct) : mClockType(ct)
 {
 	QueryPerformanceFrequency(&mFrequency);
-	mSplits = new std::map<std::string, Split>;
+	mSplits = std::map<std::string, Split>();
 }
 
-Stopwatch::Stopwatch(std::string id, CLOCKTYPE ct) : mClockType(ct)
+StopWatch::StopWatch(std::string id, CLOCKTYPE ct) : mClockType(ct)
 {
 	QueryPerformanceFrequency(&mFrequency);
-	mSplits = new std::map<std::string, Split>;
+	mSplits = std::map<std::string, Split>();
 
 	Start(id);
 }
 
-Stopwatch::~Stopwatch()
+StopWatch::~StopWatch()
 {
-	delete mSplits;
+	mSplits.clear();
 }
 
 
-void Stopwatch::Start(std::string id)
+void StopWatch::Start(std::string id)
 {
 	// disallow empty ids
 	if (id.empty()) { return; }
 
 	// see if record exists already
-	auto record = mSplits->find(id);
-	if (record != mSplits->end()) { return; }
+	auto record = mSplits.find(id);
+	if (record != mSplits.end()) { return; }
 
 	// add new record
 	long long time = GetTime();
-	mSplits->insert(make_pair(id, Split(time)));
+	mSplits.insert(make_pair(id, Split(time)));
 }
 
 
-void Stopwatch::Stop(std::string id)
+void StopWatch::Stop(std::string id)
 {
 	// attempt to find record
-	auto record = mSplits->find(id);
-	if (record == mSplits->end()) { return; }
+	auto record = mSplits.find(id);
+	if (record == mSplits.end()) { return; }
 
 	// determine clock frequency
 	long long freq = 1L;
@@ -67,17 +67,17 @@ void Stopwatch::Stop(std::string id)
 }
 
 
-void Stopwatch::Reset()
+void StopWatch::Reset()
 {
-	delete mSplits;
-	mSplits = new std::map<std::string, Split>;
+	mSplits.clear();
+	mSplits = std::map<std::string, Split>();
 }
 
-void Stopwatch::Reset(std::string id, bool start)
+void StopWatch::Reset(std::string id, bool start)
 {
 	// attempt to find record
-	auto record = mSplits->find(id);
-	if (record == mSplits->end()) { return; }
+	auto record = mSplits.find(id);
+	if (record == mSplits.end()) { return; }
 
 	// reset clock
 	record->second.start = (start) ? GetTime() : 0L;
@@ -85,54 +85,54 @@ void Stopwatch::Reset(std::string id, bool start)
 }
 
 
-long long Stopwatch::ElapsedTime(std::string id)
+long long StopWatch::ElapsedTime(std::string id)
 {
 	// attempt to find record
-	auto record = mSplits->find(id);
-	if (record == mSplits->end()) { return 0L; }
+	auto record = mSplits.find(id);
+	if (record == mSplits.end()) { return 0L; }
 
 	// return elapsed time
 	return record->second.elapsed;
 }
 
 
-void Stopwatch::Report(bool terse, bool totalonly)
+void StopWatch::Report(bool terse, bool totalOnly)
 {
 	long long total = 0;
 
-	for (auto it = mSplits->begin(); it != mSplits->end(); ++it) {
-		auto record = mSplits->find(it->first);
+	for (auto it = mSplits.begin(); it != mSplits.end(); ++it) {
+		auto record = mSplits.find(it->first);
 		total += record->second.elapsed;
 
-		if (!totalonly) { Report(it->first, terse); }
+		if (!totalOnly) { Report(it->first, terse); }
 	}
 
 	std::stringstream ss;
 
 	if (terse) {
 		ss << total;
-		SkinCut::Utility::ConsoleMessage(ss.str());
-		SkinCut::Utility::ConsoleMessage();
+		SkinCut::Util::ConsoleMessage(ss.str());
+		SkinCut::Util::ConsoleMessage();
 		return;
 	}
 
 	std::string unit = (mClockType == CLOCK_QPC_US || mClockType == CLOCK_CHRONO_US) ? " us" : " ms";
 	ss << "Total: " << total << unit;
 
-	SkinCut::Utility::ConsoleMessage(ss.str());
-	SkinCut::Utility::ConsoleMessage();
+	SkinCut::Util::ConsoleMessage(ss.str());
+	SkinCut::Util::ConsoleMessage();
 }
 
 
-void Stopwatch::Report(std::string id, bool terse)
+void StopWatch::Report(std::string id, bool terse)
 {
-	auto record = mSplits->find(id);
-	if (record == mSplits->end()) { return; }
+	auto record = mSplits.find(id);
+	if (record == mSplits.end()) { return; }
 
 	if (terse) {
 		std::stringstream ss;
 		ss << record->second.elapsed;
-		SkinCut::Utility::ConsoleMessage(ss.str());
+		SkinCut::Util::ConsoleMessage(ss.str());
 		return;
 	}
 
@@ -140,14 +140,13 @@ void Stopwatch::Report(std::string id, bool terse)
 
 	std::stringstream ss;
 	ss << id << ": " << record->second.elapsed << unit;
-	SkinCut::Utility::ConsoleMessage(ss.str());
+	SkinCut::Util::ConsoleMessage(ss.str());
 }
 
 
-long long Stopwatch::GetTime()
+long long StopWatch::GetTime()
 {
-	switch (mClockType)
-	{
+	switch (mClockType) {
 		case CLOCK_CHRONO_MS: {
 			auto now = std::chrono::high_resolution_clock::now().time_since_epoch();
 			return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();

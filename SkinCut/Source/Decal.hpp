@@ -6,7 +6,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Mathematics.hpp"
+#include "Math.hpp"
 
 
 using Microsoft::WRL::ComPtr;
@@ -15,32 +15,30 @@ using Microsoft::WRL::ComPtr;
 
 namespace SkinCut
 {
-
 	class Texture;
-
 
 	class Decal
 	{
 	public:
-		unsigned int				mIndexCount;
-		unsigned int				mVertexCount;
+		unsigned int mIndexCount;
+		unsigned int mVertexCount;
 
 		// index buffer
-		ComPtr<ID3D11Buffer>		mIndexBuffer;
-		unsigned int				mIndexBufferSize;
-		unsigned int				mIndexBufferOffset;
-		DXGI_FORMAT					mIndexBufferFormat;
+		ComPtr<ID3D11Buffer> mIndexBuffer;
+		unsigned int mIndexBufferSize;
+		unsigned int mIndexBufferOffset;
+		DXGI_FORMAT	mIndexBufferFormat;
 
 		// vertex buffer
-		ComPtr<ID3D11Buffer>		mVertexBuffer;
-		unsigned int				mVertexBufferSize;
-		unsigned int				mVertexBufferStrides;
-		unsigned int				mVertexBufferOffset;
+		ComPtr<ID3D11Buffer> mVertexBuffer;
+		unsigned int mVertexBufferSize;
+		unsigned int mVertexBufferStrides;
+		unsigned int mVertexBufferOffset;
 
 		// misc
-		Math::Vector3				mNormal;
-		Math::Matrix				mWorldMatrix;
-		std::shared_ptr<Texture>	mTexture;
+		Math::Vector3 mNormal;
+		Math::Matrix mWorldMatrix;
+		std::shared_ptr<Texture> mTexture;
 
 
 	public:

@@ -1,6 +1,6 @@
 #include "Light.hpp"
 
-#include "Utility.hpp"
+#include "Util.hpp"
 #include "FrameBuffer.hpp"
 
 
@@ -22,7 +22,6 @@ Light::Light(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context,
 	mBrightness = mBrightnessPrev = Color::RGBtoHSV(mColor).z;
 
 	mShadowMap = std::make_shared<FrameBuffer>(mDevice, mContext, shadowSize, shadowSize);
-	//mShadowMap = std::shared_ptr<FrameBuffer>(new FrameBuffer(mDevice, mContext, shadowSize, shadowSize));
 	SetViewProjection();
 
 	mLoadInfo.yaw = mYaw;
@@ -62,7 +61,6 @@ void Light::Reset()
 
 	mBrightness = mBrightnessPrev = Color::RGBtoHSV(mColor).z;
 	mShadowMap = std::make_shared<FrameBuffer>(mDevice, mContext, (uint32_t)mShadowMap->mViewport.Width, (uint32_t)mShadowMap->mViewport.Height);
-	//mShadowMap = std::shared_ptr<FrameBuffer>(new FrameBuffer(mDevice, mContext, (uint32_t)mShadowMap->mViewport.Width, (uint32_t)mShadowMap->mViewport.Height));
 
 	SetViewProjection();
 }

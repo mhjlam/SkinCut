@@ -16,17 +16,14 @@ cbuffer cb0 : register(b0)
 };
 
 
-float4 main(float4 position : SV_POSITION, 
-			float2 texcoord : TEXCOORD0, 
-			float3 normal   : TEXCOORD1, 
-			float3 halfway  : TEXCOORD2) : SV_TARGET0
+float4 main(float4 position : SV_POSITION, float2 texcoord : TEXCOORD0, float3 normal : TEXCOORD1, float3 halfway : TEXCOORD2) : SV_TARGET0
 {
 	normal = normalize(normal);
 	halfway = normalize(halfway);
 	
-	float4 Ia = AmbientColor * float4(1,1,1,1);// * AmbientLight;
-	float4 Id = DiffuseColor * saturate(dot(normal, -LightDirection.xyz));
-	float4 Is = SpecularColor * pow(saturate(dot(normal, halfway)), SpecularPower);
+	float4 ambient = AmbientColor * float4(1,1,1,1);// * AmbientLight;
+	float4 diffuse = DiffuseColor * saturate(dot(normal, -LightDirection.xyz));
+	float4 specular = SpecularColor * pow(saturate(dot(normal, halfway)), SpecularPower);
 	
-	return Ia + (Id + Is) * LightColor * ColorTexture.Sample(LinearSampler, texcoord);
+	return ambient + (diffuse + specular) * LightColor * ColorTexture.Sample(LinearSampler, texcoord);
 }

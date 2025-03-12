@@ -6,24 +6,24 @@
 
 struct VSIN
 {
-	float4 position  : POSITION0;
-	float2 texcoord  : TEXCOORD0;
-	float3 normal    : NORMAL0;
-	float4 tangent   : TANGENT0;
+	float4 Position		: POSITION0;
+	float2 TexCoord		: TEXCOORD0;
+	float3 Normal		: NORMAL0;
+	float4 Tangent		: TANGENT0;
 };
 
 struct VSOUT
 {
-	float4 position : SV_POSITION;
-	float2 texcoord : TEXCOORD0;
-	float3 normal   : TEXCOORD1;
-	float3 halfway  : TEXCOORD2;
+	float4 PositionNDC	: SV_POSITION;
+	float2 TexCoord		: TEXCOORD0;
+	float3 Normal		: TEXCOORD1;
+	float3 Halfway		: TEXCOORD2;
 };
 
 cbuffer cb0 : register(b0)
 {
 	matrix World;
-	matrix WorldIT;
+	matrix WorldInverseTranspose;
 	matrix WorldViewProjection;
 
 	float4 ViewPosition;
@@ -35,10 +35,10 @@ VSOUT main(VSIN input)
 {
 	VSOUT output;
 	
-	output.position = mul(input.position, WorldViewProjection);
-	output.texcoord = input.texcoord;
-	output.normal = mul(input.normal, (float3x3)WorldIT);
-	output.halfway = -LightDirection.xyz + normalize(ViewPosition.xyz - input.position.xyz);
+	output.PositionNDC	= mul(input.Position, WorldViewProjection);
+	output.TexCoord		= input.TexCoord;
+	output.Normal		= mul(input.Normal, (float3x3)WorldInverseTranspose);
+	output.Halfway		= -LightDirection.xyz + normalize(ViewPosition.xyz - input.Position.xyz);
 	
 	return output;  
 }

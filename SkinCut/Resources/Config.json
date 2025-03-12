@@ -1,6 +1,6 @@
 {
 	"wireframe"		: false,
-	"dashboard"		: true,
+	"interface"		: true,
 
 	"color"			: true,
 	"bumps"			: true,
@@ -22,8 +22,8 @@
 	"_picker"		: "paint|merge|carve",
 	"picker"		: "carve",
 
-	"_splitter"		: "3split|4split|6split",
-	"splitter"		: "3split",
+	"_splitter"		: "split3|split4|split6",
+	"splitter"		: "split6",
 
 	"_renderer"		: "phong|lambert|kelemen",
 	"renderer"		: "kelemen"

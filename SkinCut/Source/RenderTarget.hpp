@@ -5,7 +5,7 @@
 #include <dxgi.h>
 #include <d3d11.h>
 
-#include "Mathematics.hpp"
+#include "Math.hpp"
 
 
 using Microsoft::WRL::ComPtr;
@@ -15,7 +15,7 @@ using Microsoft::WRL::ComPtr;
 namespace SkinCut
 {
 	// Render target
-	class Target
+	class RenderTarget
 	{
 	private:
 		ComPtr<ID3D11Device> mDevice;
@@ -27,22 +27,22 @@ namespace SkinCut
 		ComPtr<ID3D11RenderTargetView> mRenderTarget;
 		ComPtr<ID3D11ShaderResourceView> mShaderResource;
 
-		uint32_t mSampleMask; // sampling method (0xffffffff: point sampling)
+		uint32_t mSampleMask; // sampling method (0xffffffff = point sampling)
 		Math::Color mBlendFactor;
 		D3D11_VIEWPORT mViewport;
 		D3D11_BLEND_DESC mBlendDesc;
 
 
 	public:
-		Target(ComPtr<ID3D11Device>& device, 
+		RenderTarget(ComPtr<ID3D11Device>& device, 
 			   ComPtr<ID3D11DeviceContext>& context, 
 			   uint32_t width, uint32_t height, 
 			   DXGI_FORMAT format, bool typeless = true);
-		Target(ComPtr<ID3D11Device>& device, 
+		RenderTarget(ComPtr<ID3D11Device>& device, 
 			   ComPtr<ID3D11DeviceContext>& context, 
 			   uint32_t width, uint32_t height, 
 			   DXGI_FORMAT format, ComPtr<ID3D11Texture2D>& basetex);
-		Target(ComPtr<ID3D11Device>& device, 
+		RenderTarget(ComPtr<ID3D11Device>& device, 
 			   ComPtr<ID3D11DeviceContext>& context, 
 			   ComPtr<ID3D11Texture2D>& texture, DXGI_FORMAT format);
 

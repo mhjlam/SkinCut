@@ -20,20 +20,20 @@ SamplerState LinearSampler : register(s0);
 
 float4 main(float4 position : SV_POSITION, float2 texcoord : TEXCOORD) : SV_TARGET
 {
-	// parallel and orthogonal vectors to cutline segment
-	float2 vx = normalize(P1 - P0);
-	float2 vy = float2(-vx.y, vx.x);
+	// Parallel and orthogonal vectors to cut line segment
+	float2 vectorX = normalize(P1 - P0);
+    float2 vectorY = float2(-vectorX.y, vectorX.x);
 
-	// direction vector from origin to texcoord
-	float2 vt = (texcoord - P0);
+	// Direction vector from origin to texcoord
+	float2 direction = (texcoord - P0);
 
-	// x and y components of the direction vector
-	float1 dx = dot(vt, vx);
-	float1 dy = dot(vt, vy);
+	// X and Y components of the direction vector
+    float1 directionX = dot(direction, vectorX);
+    float1 directionY = dot(direction, vectorY);
 
 	float2 sample = float2(0, 0);
-	sample.x = (Offset + dx) / CutLength;
-	sample.y = 0.5 - (dy / CutHeight);
+	sample.x = (Offset + directionX) / CutLength;
+	sample.y = 0.5 - (directionY / CutHeight);
 
 	return Texture.Sample(LinearSampler, sample);
 }

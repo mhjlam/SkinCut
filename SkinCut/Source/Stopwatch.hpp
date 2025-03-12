@@ -3,6 +3,7 @@
 #include <map>
 #include <ctime>
 #include <chrono>
+#include <memory>
 #include <sstream>
 #include <iostream>
 
@@ -20,7 +21,7 @@ namespace SkinCut
 	};
 
 
-	class Stopwatch
+	class StopWatch
 	{
 	private:
 		struct Split
@@ -43,12 +44,12 @@ namespace SkinCut
 
 		CLOCKTYPE mClockType;
 		LARGE_INTEGER mFrequency;
-		std::map<std::string, Split>* mSplits;
+		std::map<std::string, Split> mSplits;
 
 	public:
-		Stopwatch(CLOCKTYPE ct = CLOCK_QPC_US);
-		Stopwatch(std::string id, CLOCKTYPE ct = CLOCK_QPC_US);
-		~Stopwatch();
+		StopWatch(CLOCKTYPE clockType = CLOCK_QPC_US);
+		StopWatch(std::string id, CLOCKTYPE clockType = CLOCK_QPC_US);
+		~StopWatch();
 
 		void Start(std::string id);
 		void Stop(std::string id);
@@ -57,7 +58,7 @@ namespace SkinCut
 
 		long long ElapsedTime(std::string id);
 
-		void Report(bool terse = false, bool totalonly = false);
+		void Report(bool terse = false, bool totalOnly = false);
 		void Report(std::string id, bool terse = false);
 
 	private:

@@ -9,7 +9,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Mathematics.hpp"
+#include "Math.hpp"
 
 
 using Microsoft::WRL::ComPtr;

@@ -97,9 +97,6 @@
     <Filter Include="Libraries\ImGui">
       <UniqueIdentifier>{90cc3fe5-d2a3-4ec6-8463-a9d82edc1892}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Libraries\SimpleJSON">
-      <UniqueIdentifier>{df11ac81-7a35-4505-be16-3db4cf5195b4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resources">
       <UniqueIdentifier>{a3b4c331-d45d-4344-8844-b91263d9fc44}</UniqueIdentifier>
     </Filter>
@@ -165,31 +162,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="libraries\SimpleJSON\JSON.cpp">
-      <Filter>Libraries\SimpleJSON</Filter>
-    </ClCompile>
-    <ClCompile Include="libraries\SimpleJSON\JSONValue.cpp">
-      <Filter>Libraries\SimpleJSON</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Main.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Application.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Camera.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Dashboard.cpp">
-      <Filter>Source\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Decal.cpp">
+    <ClCompile Include="Source\Interface.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\FrameBuffer.cpp">
-      <Filter>Source\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Generator.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Hash.cpp">
@@ -198,7 +180,7 @@
     <ClCompile Include="Source\Light.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Mathematics.cpp">
+    <ClCompile Include="Source\Math.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Mesh.cpp">
@@ -216,16 +198,16 @@
     <ClCompile Include="Source\Shader.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Stopwatch.cpp">
+    <ClCompile Include="Source\StopWatch.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Target.cpp">
+    <ClCompile Include="Source\RenderTarget.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Texture.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Utility.cpp">
+    <ClCompile Include="Source\Util.cpp">
       <Filter>Source\Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\VertexBuffer.cpp">
@@ -432,30 +414,30 @@
     <ClCompile Include="Libraries\ImGui\imgui_widgets.cpp">
       <Filter>Libraries\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Tester.cpp">
+      <Filter>Source\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Structs.cpp">
+      <Filter>Source\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Cutter.cpp">
+      <Filter>Source\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libraries\SimpleJSON\JSON.h">
-      <Filter>Libraries\SimpleJSON</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\SimpleJSON\JSONValue.h">
-      <Filter>Libraries\SimpleJSON</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Application.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Camera.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Dashboard.hpp">
-      <Filter>Source\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Decal.hpp">
+    <ClInclude Include="Source\Interface.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\FrameBuffer.hpp">
-      <Filter>Source\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Generator.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Hash.hpp">
@@ -464,7 +446,7 @@
     <ClInclude Include="Source\Light.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Mathematics.hpp">
+    <ClInclude Include="Source\Math.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Mesh.hpp">
@@ -482,19 +464,19 @@
     <ClInclude Include="Source\Shader.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Stopwatch.hpp">
+    <ClInclude Include="Source\StopWatch.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Structures.hpp">
+    <ClInclude Include="Source\Structs.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Target.hpp">
+    <ClInclude Include="Source\RenderTarget.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Texture.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Utility.hpp">
+    <ClInclude Include="Source\Util.hpp">
       <Filter>Source\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\VertexBuffer.hpp">
@@ -652,6 +634,12 @@
     </ClInclude>
     <ClInclude Include="Libraries\nlohmann\json_fwd.hpp">
       <Filter>Libraries\nlohmann</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Tester.hpp">
+      <Filter>Source\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Cutter.hpp">
+      <Filter>Source\Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

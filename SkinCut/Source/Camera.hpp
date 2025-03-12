@@ -1,11 +1,6 @@
 #pragma once
 
-#include <d3d11.h>
-#include <memory>
-
-#include "Structures.hpp"
-#include "Mathematics.hpp"
-
+#include "Math.hpp"
 
 
 namespace SkinCut

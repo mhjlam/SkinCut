@@ -1,50 +1,49 @@
-#include "Utility.hpp"
+#include "Util.hpp"
 
 #include <string>
 #include <locale>
 #include <random>
-#include <codecvt>
 #include <sstream>
 #include <iostream>
 #include <functional>
 
 #include <wincodec.h>
 
-#include "DirectXTex/DirectXTex.h"
-#include "DirectXTK/Inc/DDSTextureLoader.h"
+#include <DirectXTex/DirectXTex.h>
+#include <DirectXTK/Inc/DDSTextureLoader.h>
 
 
 using namespace SkinCut;
 
 
 
-float Utility::Random(float min, float max)
+float Util::Random(float min, float max)
 {
 	std::random_device device;
-	auto engine = std::default_random_engine(device());
+	auto randomEngine = std::default_random_engine(device());
 
-	// return uniformly distributed float between min and max
-	std::uniform_real_distribution<float> distr(min, max);
-	return distr(engine);
+	// Return uniformly distributed float between min and max
+	std::uniform_real_distribution<float> distribution(min, max);
+	return distribution(randomEngine);
 }
 
-std::vector<float> Utility::Random(unsigned int n, float min, float max)
+std::vector<float> Util::Random(unsigned int n, float min, float max)
 {
 	std::random_device device;
-	auto engine = std::default_random_engine(device());
+	auto randomEngine = std::default_random_engine(device());
 
-	std::uniform_real_distribution<float> distr(min, max);
+	std::uniform_real_distribution<float> distribution(min, max);
 
 	std::vector<float> output(n);
 	for (auto& f : output) {
-		f = distr(engine);
+		f = distribution(randomEngine);
 	}
 	return output;
 }
 
 
 
-DirectX::XMFLOAT4X4A Utility::MatrixMultiply(DirectX::XMFLOAT4X4 m0, DirectX::XMFLOAT4X4 m1)
+DirectX::XMFLOAT4X4A Util::MatrixMultiply(DirectX::XMFLOAT4X4 m0, DirectX::XMFLOAT4X4 m1)
 {
 	DirectX::XMMATRIX mat0 = DirectX::XMLoadFloat4x4(&m0);
 	DirectX::XMMATRIX mat1 = DirectX::XMLoadFloat4x4(&m1);
@@ -56,7 +55,7 @@ DirectX::XMFLOAT4X4A Utility::MatrixMultiply(DirectX::XMFLOAT4X4 m0, DirectX::XM
 }
 
 
-DirectX::XMFLOAT4X4A Utility::MatrixMultiply(DirectX::XMFLOAT4X4 m0, DirectX::XMFLOAT4X4 m1, DirectX::XMFLOAT4X4 m2)
+DirectX::XMFLOAT4X4A Util::MatrixMultiply(DirectX::XMFLOAT4X4 m0, DirectX::XMFLOAT4X4 m1, DirectX::XMFLOAT4X4 m2)
 {
 	DirectX::XMMATRIX mat0 = DirectX::XMLoadFloat4x4(&m0);
 	DirectX::XMMATRIX mat1 = DirectX::XMLoadFloat4x4(&m1);
@@ -68,7 +67,7 @@ DirectX::XMFLOAT4X4A Utility::MatrixMultiply(DirectX::XMFLOAT4X4 m0, DirectX::XM
 	return result;
 }
 
-DirectX::XMFLOAT4X4A Utility::MatrixInverse(DirectX::XMFLOAT4X4 m)
+DirectX::XMFLOAT4X4A Util::MatrixInverse(DirectX::XMFLOAT4X4 m)
 {
 	DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&m);
 	DirectX::XMMATRIX res = DirectX::XMMatrixInverse(nullptr, mat);
@@ -80,97 +79,84 @@ DirectX::XMFLOAT4X4A Utility::MatrixInverse(DirectX::XMFLOAT4X4 m)
 
 
 
-void Utility::ConsoleMessage(std::string msg)
+void Util::ConsoleMessage(std::string msg)
 {
 	std::stringstream ss;
 	ss << msg << std::endl;
 
 	std::cout << ss.str();
-	OutputDebugStringA(ss.str().c_str());
+	::OutputDebugStringA(ss.str().c_str());
 }
 
-void Utility::ConsoleMessageW(std::wstring msg)
+void Util::ConsoleMessageW(std::wstring msg)
 {
 	std::wstringstream ss;
 	ss << msg << std::endl;
 
 	std::wcout << ss.str();
-	OutputDebugStringW(ss.str().c_str());
+	::OutputDebugStringW(ss.str().c_str());
 }
 
-void Utility::DialogMessage(std::string msg)
+void Util::DialogMessage(std::string msg)
 {
-	MessageBoxA(nullptr, msg.c_str(), "Error", MB_ICONERROR | MB_OK);
+	::MessageBoxA(nullptr, msg.c_str(), "Error", MB_ICONERROR | MB_OK);
 }
 
-void Utility::DialogMessageW(std::wstring msg)
+void Util::DialogMessageW(std::wstring msg)
 {
-	MessageBoxW(nullptr, msg.c_str(), L"Error", MB_ICONERROR | MB_OK);
+	::MessageBoxW(nullptr, msg.c_str(), L"Error", MB_ICONERROR | MB_OK);
 }
 
-int Utility::ErrorMessage(std::exception& e)
+int Util::ErrorMessage(std::exception& e)
 {
 	std::stringstream ss;
 	ss << "Critical error: " << e.what() << "." << std::endl << "Reload model?";
-	return MessageBoxA(nullptr, ss.str().c_str(), "Error", MB_ICONERROR | MB_YESNOCANCEL);
+	return ::MessageBoxA(nullptr, ss.str().c_str(), "Error", MB_ICONERROR | MB_YESNOCANCEL);
 }
 
 
 
-bool Utility::CompareString(std::string str0, std::string str1)
+bool Util::CompareString(std::string str0, std::string str1)
 {
-	return (_stricmp(str0.c_str(), str1.c_str()) == 0);
+	return (::_stricmp(str0.c_str(), str1.c_str()) == 0);
 }
 
-bool Utility::CompareString(std::wstring str0, std::wstring str1)
+bool Util::CompareString(std::wstring str0, std::wstring str1)
 {
-	return (_wcsicmp(str0.c_str(), str1.c_str()) == 0);
-}
-
-
-std::string Utility::wstr2str(const std::wstring& wstr)
-{
-	// Convert wide Unicode string to an UTF8 string
-	if (wstr.empty()) { return std::string(); }
-
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	return converter.to_bytes(wstr);
-}
-
-std::wstring Utility::str2wstr(const std::string& str)
-{
-	if (str.empty()) { return std::wstring(); }
-
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	return converter.from_bytes(str);
+	return (::_wcsicmp(str0.c_str(), str1.c_str()) == 0);
 }
 
 
-void Utility::GetTextureDim(ComPtr<ID3D11Resource>& resource, uint32_t& width, uint32_t& height)
-{
-	D3D11_RESOURCE_DIMENSION dim;
-	resource->GetType(&dim);
-
-	switch (dim) {
-		case D3D11_RESOURCE_DIMENSION_TEXTURE2D: {
-			auto texture = reinterpret_cast<ID3D11Texture2D*>(resource.Get());
-			D3D11_TEXTURE2D_DESC desc;
-			texture->GetDesc(&desc);
-			width = desc.Width;
-			height = desc.Height;
-			break;
-		}
-
-		default: {
-			width = 0;
-			height = 0;
-			break;
-		}
+std::string Util::str(const std::wstring& wstr) {
+	std::string str(wstr.size() * 4, '\0'); // UTF-8 characters can be up to 4 bytes
+	std::mbstate_t state{};
+	const wchar_t* src = wstr.data();
+	char* dest = &str[0];
+	std::size_t len = str.size();
+	std::size_t result = std::wcsrtombs(dest, &src, len, &state);
+	if (result == static_cast<std::size_t>(-1)) {
+		return "";
 	}
+	str.resize(result);
+	return str;
+}
+
+std::wstring Util::wstr(const std::string& utf8) {
+	std::wstring wstr(utf8.size(), L'\0');
+	std::mbstate_t state{};
+	const char* src = utf8.data();
+	wchar_t* dest = &wstr[0];
+	std::size_t len = utf8.size();
+	std::size_t result = std::mbsrtowcs(dest, &src, len, &state);
+	if (result == static_cast<std::size_t>(-1)) { 
+		return L"";
+	}
+	wstr.resize(result);
+	return wstr;
 }
 
 
-bool Utility::ValidCopy(ComPtr<ID3D11Texture2D>& src, ComPtr<ID3D11Texture2D>& dst)
+bool Util::ValidCopy(ComPtr<ID3D11Texture2D>& src, ComPtr<ID3D11Texture2D>& dst)
 {
 	std::function<DXGI_FORMAT_GROUP(DXGI_FORMAT)> FormatGroup = [](DXGI_FORMAT format) {
 		switch (format) {
@@ -311,7 +297,7 @@ bool Utility::ValidCopy(ComPtr<ID3D11Texture2D>& src, ComPtr<ID3D11Texture2D>& d
 
 
 ComPtr<ID3D11Resource> 
-Utility::GetResource(ComPtr<ID3D11ShaderResourceView>& srv)
+Util::GetResource(ComPtr<ID3D11ShaderResourceView>& srv)
 {
 	ComPtr<ID3D11Resource> resource;
 	srv->GetResource(resource.GetAddressOf());
@@ -320,160 +306,152 @@ Utility::GetResource(ComPtr<ID3D11ShaderResourceView>& srv)
 
 
 ComPtr<ID3D11Texture1D>
-Utility::GetTexture1D(ComPtr<ID3D11ShaderResourceView>& srv)
+Util::GetTexture1D(ComPtr<ID3D11ShaderResourceView>& srv)
 {
 	ComPtr<ID3D11Resource> resource;
 	ComPtr<ID3D11Texture1D> texture;
 	srv->GetResource(resource.GetAddressOf());
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture1D), 
-		reinterpret_cast<void**>(texture.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture1D), reinterpret_cast<void**>(texture.GetAddressOf())));
 	return texture;
 }
 
 ComPtr<ID3D11Texture2D>
-Utility::GetTexture2D(ComPtr<ID3D11ShaderResourceView>& srv)
+Util::GetTexture2D(ComPtr<ID3D11ShaderResourceView>& srv)
 {
 	ComPtr<ID3D11Resource> resource;
 	ComPtr<ID3D11Texture2D> texture;
 	srv->GetResource(resource.GetAddressOf());
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), 
-		reinterpret_cast<void**>(texture.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(texture.GetAddressOf())));
 	return texture;
 }
 
 ComPtr<ID3D11Texture3D>
-Utility::GetTexture3D(ComPtr<ID3D11ShaderResourceView>& srv)
+Util::GetTexture3D(ComPtr<ID3D11ShaderResourceView>& srv)
 {
 	ComPtr<ID3D11Resource> resource;
 	ComPtr<ID3D11Texture3D> texture;
 	srv->GetResource(resource.GetAddressOf());
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture3D), 
-		reinterpret_cast<void**>(texture.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture3D), reinterpret_cast<void**>(texture.GetAddressOf())));
 	return texture;
 }
 
 
-void Utility::GetTexture1D(ComPtr<ID3D11ShaderResourceView>& srv, ComPtr<ID3D11Texture1D>& tex, D3D11_TEXTURE1D_DESC& desc)
+void Util::GetTexture1D(ComPtr<ID3D11ShaderResourceView>& srv, ComPtr<ID3D11Texture1D>& tex, D3D11_TEXTURE1D_DESC& desc)
 {
 	ComPtr<ID3D11Resource> resource;
 	srv->GetResource(resource.GetAddressOf());
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture1D), 
-		reinterpret_cast<void**>(tex.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture1D), reinterpret_cast<void**>(tex.GetAddressOf())));
 	tex->GetDesc(&desc);
 }
 
-void Utility::GetTexture2D(ComPtr<ID3D11ShaderResourceView>& srv, ComPtr<ID3D11Texture2D>& tex, D3D11_TEXTURE2D_DESC& desc)
+void Util::GetTexture2D(ComPtr<ID3D11ShaderResourceView>& srv, ComPtr<ID3D11Texture2D>& tex, D3D11_TEXTURE2D_DESC& desc)
 {
 	ComPtr<ID3D11Resource> resource;
 	srv->GetResource(resource.GetAddressOf());
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), 
-		reinterpret_cast<void**>(tex.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(tex.GetAddressOf())));
 	tex->GetDesc(&desc);
 }
 
-void Utility::GetTexture3D(ComPtr<ID3D11ShaderResourceView>& srv, ComPtr<ID3D11Texture3D>& texture, D3D11_TEXTURE3D_DESC& desc)
+void Util::GetTexture3D(ComPtr<ID3D11ShaderResourceView>& srv, ComPtr<ID3D11Texture3D>& texture, D3D11_TEXTURE3D_DESC& desc)
 {
 	ComPtr<ID3D11Resource> resource;
 	srv->GetResource(resource.GetAddressOf());
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture3D), 
-		reinterpret_cast<void**>(texture.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture3D), reinterpret_cast<void**>(texture.GetAddressOf())));
 	texture->GetDesc(&desc);
 }
 
 
 
-void Utility::SaveTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, 
-	ComPtr<ID3D11Resource>& resource, LPCWSTR filename)
+void Util::SaveTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, ComPtr<ID3D11Resource>& resource, LPCWSTR filename)
 {
 	DirectX::ScratchImage image;
 	ComPtr<ID3D11Texture2D> texture;
 	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(texture.GetAddressOf())));
 
-	if (SUCCEEDED(CaptureTexture(device.Get(), context.Get(), texture.Get(), image))) {
-		SaveToWICFile(*image.GetImage(0, 0, 0), DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, filename, nullptr);
+	if (SUCCEEDED(DirectX::CaptureTexture(device.Get(), context.Get(), texture.Get(), image))) {
+		DirectX::SaveToWICFile(*image.GetImage(0, 0, 0), DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, filename, nullptr);
 	}
 }
 
-void Utility::SaveTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, ComPtr<ID3D11Texture2D>& texture, LPCWSTR fileName)
+void Util::SaveTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, ComPtr<ID3D11Texture2D>& texture, LPCWSTR fileName)
 {
 	DirectX::ScratchImage image;
-	if (FAILED(CaptureTexture(device.Get(), context.Get(), texture.Get(), image))) { return; }
-	if (FAILED(SaveToWICFile(*image.GetImage(0, 0, 0), DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, fileName, nullptr))) { return; }
+	if (FAILED(DirectX::CaptureTexture(device.Get(), context.Get(), texture.Get(), image))) { return; }
+	if (FAILED(DirectX::SaveToWICFile(*image.GetImage(0, 0, 0), DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, fileName, nullptr))) { return; }
 }
 
-void Utility::SaveTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, ComPtr<ID3D11ShaderResourceView>& srv, LPCWSTR fileName)
+void Util::SaveTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& context, ComPtr<ID3D11ShaderResourceView>& srv, LPCWSTR fileName)
 {
 	DirectX::ScratchImage image;
 	ComPtr<ID3D11Resource> resource;
 	ComPtr<ID3D11Texture2D> texture;
 	srv->GetResource(&resource);
 
-	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), 
-		reinterpret_cast<void**>(texture.GetAddressOf())));
+	HREXCEPT(resource.Get()->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(texture.GetAddressOf())));
 
 	if (SUCCEEDED(CaptureTexture(device.Get(), context.Get(), texture.Get(), image))) {
-		SaveToWICFile(*image.GetImage(0, 0, 0), DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, fileName, nullptr);
+		DirectX::SaveToWICFile(*image.GetImage(0, 0, 0), DirectX::WIC_FLAGS_NONE, GUID_ContainerFormatPng, fileName, nullptr);
 	}
 }
 
 
-ComPtr<ID3D11ShaderResourceView> Utility::LoadTexture(ComPtr<ID3D11Device>& device, const std::wstring& name, const bool srgb)
+ComPtr<ID3D11ShaderResourceView> Util::LoadTexture(ComPtr<ID3D11Device>& device, const std::wstring& name, const bool srgb)
 {
 	ComPtr<ID3D11ShaderResourceView> srv;
-	HMODULE mod = GetModuleHandle(nullptr);
-	HRSRC hrsrc = FindResource(mod, name.c_str(), RT_RCDATA);
+	HMODULE mod = ::GetModuleHandle(nullptr);
+	HRSRC hrsrc = ::FindResource(mod, name.c_str(), RT_RCDATA);
 
 	if (hrsrc) { // resource exists
-		HGLOBAL res = LoadResource(mod, hrsrc);
-		size_t size = SizeofResource(mod, hrsrc);
-		LPCVOID src = LockResource(res);
+		HGLOBAL resource = ::LoadResource(mod, hrsrc);
+		size_t size = ::SizeofResource(mod, hrsrc);
+		LPCVOID data = ::LockResource(resource);
 
 		DirectX::DDS_LOADER_FLAGS ddsLoaderFlags = DirectX::DDS_LOADER_DEFAULT;
 		if (srgb) {
 			ddsLoaderFlags = DirectX::DDS_LOADER_FORCE_SRGB;
 		}
 
-		HREXCEPT(DirectX::CreateDDSTextureFromMemoryEx(device.Get(), (uint8_t*)src, size, 0,
+		HREXCEPT(DirectX::CreateDDSTextureFromMemoryEx(device.Get(), (uint8_t*)data, size, 0,
 			D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, ddsLoaderFlags, nullptr, srv.GetAddressOf()));
 	}
 	else { // try to load from file
-		WIN32_FIND_DATA finddata;
-		HANDLE handle = FindFirstFile(name.c_str(), &finddata);
+		WIN32_FIND_DATA findData;
+		HANDLE handle = ::FindFirstFile(name.c_str(), &findData);
 
 		if (handle != INVALID_HANDLE_VALUE) // found
 		{
-			FindClose(handle);
+			::FindClose(handle);
 
 			DirectX::DDS_LOADER_FLAGS ddsLoaderFlags = DirectX::DDS_LOADER_DEFAULT;
 			if (srgb) {
 				ddsLoaderFlags = DirectX::DDS_LOADER_FORCE_SRGB;
 			}
 
-			if (FAILED(DirectX::CreateDDSTextureFromFileEx(device.Get(), name.c_str(), 0, 
-				D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, ddsLoaderFlags, nullptr, srv.GetAddressOf()))) {
+			if (FAILED(DirectX::CreateDDSTextureFromFileEx(device.Get(), name.c_str(), 0, D3D11_USAGE_DEFAULT, 
+				D3D11_BIND_SHADER_RESOURCE, 0, 0, ddsLoaderFlags, nullptr, srv.GetAddressOf()))) {
 					throw std::exception("Texture load error");
 			}
 		}
 		else
 		{
-			const std::wstring name2 = std::wstring(L"Resources\\") + name;
-			HANDLE handle = FindFirstFile(name2.c_str(), &finddata);
+			const std::wstring altName = std::wstring(L"Resources\\") + name;
+			HANDLE handle = ::FindFirstFile(altName.c_str(), &findData);
 
 			if (handle != INVALID_HANDLE_VALUE) {
-				FindClose(handle);
+				::FindClose(handle);
 
 				DirectX::DDS_LOADER_FLAGS ddsLoaderFlags = DirectX::DDS_LOADER_DEFAULT;
 				if (srgb) {
 					ddsLoaderFlags = DirectX::DDS_LOADER_FORCE_SRGB;
 				}
 
-				if (FAILED(DirectX::CreateDDSTextureFromFileEx(device.Get(), name2.c_str(), 0, 
-					D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, ddsLoaderFlags, nullptr, srv.GetAddressOf()))) {
-					throw std::exception("Texture load error");
+				if (FAILED(DirectX::CreateDDSTextureFromFileEx(device.Get(), altName.c_str(), 0, D3D11_USAGE_DEFAULT, 
+					D3D11_BIND_SHADER_RESOURCE, 0, 0, ddsLoaderFlags, nullptr, srv.GetAddressOf()))) {
+						throw std::exception("Texture load error");
 				}
 			}
 			else {
-				FindClose(handle);
+				::FindClose(handle);
 				throw std::exception("Texture load error");
 			}
 		}

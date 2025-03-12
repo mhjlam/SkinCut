@@ -4,7 +4,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Mathematics.hpp"
+#include "Math.hpp"
 
 
 using Microsoft::WRL::ComPtr;
@@ -34,7 +34,7 @@ namespace SkinCut
 	public:
 		FrameBuffer(ComPtr<ID3D11Device>& device,
 					ComPtr<ID3D11DeviceContext>& context,
-					ComPtr<IDXGISwapChain>& swapchain,
+					ComPtr<IDXGISwapChain>& swapChain,
 					DXGI_FORMAT depthFormatTex = DXGI_FORMAT_R32_TYPELESS,
 					DXGI_FORMAT depthFormatDsv = DXGI_FORMAT_D32_FLOAT,
 					DXGI_FORMAT depthFormatSrv = DXGI_FORMAT_R32_FLOAT);
@@ -49,7 +49,7 @@ namespace SkinCut
 
 		FrameBuffer(ComPtr<ID3D11Device>& device,
 					ComPtr<ID3D11DeviceContext>& context,
-					ComPtr<ID3D11Texture2D>& basetex,
+					ComPtr<ID3D11Texture2D>& texture,
 					DXGI_FORMAT colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
 					DXGI_FORMAT depthFormatTex = DXGI_FORMAT_R32_TYPELESS,
 					DXGI_FORMAT depthFormatDsv = DXGI_FORMAT_D32_FLOAT,

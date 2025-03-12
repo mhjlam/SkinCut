@@ -9,8 +9,8 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Structures.hpp"
-#include "Mathematics.hpp"
+#include "Structs.hpp"
+#include "Math.hpp"
 
 
 using Microsoft::WRL::ComPtr;
@@ -19,7 +19,6 @@ using Microsoft::WRL::ComPtr;
 
 namespace SkinCut
 {
-
 	class Mesh;
 
 	typedef std::list<Link> LinkList;
@@ -28,7 +27,7 @@ namespace SkinCut
 
 	struct EntityLoadInfo
 	{
-		Math::Vector3 position;
+		Math::Vector3 Position;
 		Math::Vector2 rotation;
 		std::wstring meshPath;
 		std::wstring colorPath;
@@ -81,7 +80,7 @@ namespace SkinCut
 
 
 	public: // constructor
-		Entity(ComPtr<ID3D11Device>& device, Math::Vector3 position, Math::Vector2 rotation,
+		Entity(ComPtr<ID3D11Device>& device, Math::Vector3 Position, Math::Vector2 rotation,
 			std::wstring meshPath, std::wstring colorPath, std::wstring normalPath, std::wstring specularPath, std::wstring discolorPath, std::wstring occlusionPath);
 		~Entity();
 

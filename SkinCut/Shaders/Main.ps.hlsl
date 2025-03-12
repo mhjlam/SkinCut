@@ -11,34 +11,34 @@
 
 struct PSIN
 {
-	float4 position : SV_POSITION;
-	float2 texcoord : TEXCOORD0;
-	float3 worldpos : TEXCOORD1;	// world position
-	float3 viewdir  : TEXCOORD2;	// view direction
-	float3 normal   : TEXCOORD3;
-	float4 tangent  : TEXCOORD4;
+	float4 Position : SV_POSITION;
+	float2 TexCoord : TEXCOORD0;
+	float3 WorldPos : TEXCOORD1;	// world position
+	float3 ViewDir  : TEXCOORD2;	// view direction
+	float3 Normal   : TEXCOORD3;
+	float4 Tangent  : TEXCOORD4;
 };
 
 struct PSOUT
 {
-	float4 color    : SV_TARGET0;
-	float4 depth    : SV_TARGET1;
-	float4 specular : SV_TARGET2;
-	float4 discolor : SV_TARGET3;
+	float4 Color    : SV_TARGET0;
+	float4 Depth    : SV_TARGET1;
+	float4 Specular : SV_TARGET2;
+	float4 Discolor : SV_TARGET3;
 };
 
 struct Light
 {
-	float1 farplane;		// 10.0
-	float1 falloffdist;		// 0.924
-	float1 falloffwidth;	// 0.050
-	float1 attenuation;		// 0.008
+	float1 FarPlane;		// 10.0
+	float1 FalloffDist;		// 0.924
+	float1 FalloffWidth;	// 0.050
+	float1 Attenuation;		// 0.008
 
-	float4 color;
-	float4 position;
-	float4 direction;
+	float4 Color;
+	float4 Position;
+	float4 Direction;
 
-	matrix viewproj;		// float4x4
+	matrix ViewProj;		// float4x4
 };
 
 cbuffer cbGlobals : register(b0)
@@ -83,42 +83,40 @@ float1 SpecularKSK(float3 normal, float3 light, float3 view, float1 intensity, f
 {
 	// half-way vector
 	float3 halfway = light + view;
-	float3 halfn = normalize(halfway);
+	float3 halfN = normalize(halfway);
 
-	float1 ndotl = saturate(dot(normal, light));
-	float1 ndoth = saturate(dot(normal, halfn));
+	float1 NdotL = saturate(dot(normal, light));
+	float1 NdotH = saturate(dot(normal, halfN));
 
 	// fraction of facets oriented towards h
-	float1 ph = pow(abs(2.0 * BeckmannMap.Sample(SamplerLinear, float2(ndoth, 1.0 - roughness)).r), 10.0);
+	float1 ph = pow(abs(2.0 * BeckmannMap.Sample(SamplerLinear, float2(NdotH, 1.0 - roughness)).r), 10.0);
 
 	float f0 = 0.028;											// reflectance of skin at normal incidence
-	float f = (1.0 - f0) * pow(1.0 - dot(view, halfn), 5.0);	// Schlick's Fresnel approximation
+	float f = (1.0 - f0) * pow(1.0 - dot(view, halfN), 5.0);	// Schlick's Fresnel approximation
 	f = lerp(0.25, f, Fresnel);									// modulate by given Fresnel value
 
 	float1 fr = max(0.0, ph * f / dot(halfway, halfway));		// dot(halfway, halfway) = length(halfway)^2
-	return intensity * ndotl * fr;
+	return intensity * NdotL * fr;
 }
 
 
 // Percentage-closer filtering (anti-aliased shadows).
-float1 ShadowPCF(float3 worldpos, matrix viewproj, float1 farplane, Texture2D shadowmap, int samples)
+float1 ShadowPCF(float3 worldPos, matrix viewProj, float1 farPlane, Texture2D shadowMap, int samples)
 {
-	float4 lightpos = mul(float4(worldpos, 1.0), viewproj);		// transform position into light space
-	lightpos.xy = lightpos.xy / lightpos.w;						// perspective transform
-	lightpos.z = lightpos.z - 0.01;								// shadow bias
+    float4 lightPos = mul(float4(worldPos, 1.0), viewProj);		// transform position into light space
+    lightPos.xy = lightPos.xy / lightPos.w;						// perspective transform
+    lightPos.z = lightPos.z - 0.01;								// shadow bias
 
 	float1 shadow = 0.0;
 	float1 offset = (samples - 1.0) / 2.0;
-	float1 depth = lightpos.z / farplane;						// depth of position, remapped to [0,1]
+    float1 depth = lightPos.z / farPlane;						// depth of position, remapped to [0,1]
 
 	[unroll]
-	for (float1 x = -offset; x <= offset; x += 1.0)
-	{
+	for (float1 x = -offset; x <= offset; x += 1.0) {
 		[unroll]
-		for (float1 y = -offset; y <= offset; y += 1.0)
-		{
-			float2 pos = lightpos.xy + (float2(x, y) / SHADOW_MAP_SIZE);
-			shadow += saturate(shadowmap.SampleCmp(SamplerShadowComparison, pos, depth).r);
+		for (float1 y = -offset; y <= offset; y += 1.0) {
+            float2 pos = lightPos.xy + (float2(x, y) / SHADOW_MAP_SIZE);
+			shadow += saturate(shadowMap.SampleCmp(SamplerShadowComparison, pos, depth).r);
 		}
 	}
 
@@ -127,16 +125,22 @@ float1 ShadowPCF(float3 worldpos, matrix viewproj, float1 farplane, Texture2D sh
 
 
 // Screen-space translucency.
-float3 Transmittance(float3 worldpos, float3 normal, float3 lightdir, Texture2D shadowmap, matrix viewproj, float1 farplane, float3 spotlight, float3 albedo)
+float3 Transmittance(float3 worldPos, float3 normal, float3 lightDir, Texture2D shadowMap, matrix viewProj, float1 farPlane, float3 spotlight, float3 albedo)
 {
 	float scale = 8.25 * (1.0 - Translucency) / ScatterWidth;
 
-	float4 pos = float4(worldpos - 0.005 * normal, 1.0);		// used to prevent aliasing artifacts around edges
-	float4 lightpos = mul(pos, viewproj);						// light-space position of pixel
-	float1 d1 = shadowmap.Sample(SamplerLinear,					// incoming point
-		lightpos.xy / lightpos.w).r * farplane;							
-	float1 d2 = lightpos.z;										// outgoing point
-	float1 dist = abs(d1 - d2);									// distance between incoming and outgoing points
+	// used to prevent aliasing artifacts around edges
+    float4 pos = float4(worldPos - 0.005 * normal, 1.0);
+	
+	// light-space position of pixel
+    float4 lightPos = mul(pos, viewProj);
+	
+	// incoming and outgoing points
+    float1 d1 = shadowMap.Sample(SamplerLinear, lightPos.xy / lightPos.w).r * farPlane;
+    float1 d2 = lightPos.z;
+	
+	// distance between incoming and outgoing points
+    float1 dist = abs(d1 - d2);
 
 	float1 s = scale * dist;
 	float1 ss = -s*s;
@@ -151,7 +155,7 @@ float3 Transmittance(float3 worldpos, float3 normal, float3 lightdir, Texture2D 
 	profile += float3(0.078, 0.000, 0.000) * exp(ss / 7.4100);
 
 	// transmittance = profile * (spotlight color * attenuation * falloff) * albedo * E;
-	float3 E = saturate(0.3 + dot(-normal, lightdir)); // wrap lighting
+	float3 E = saturate(0.3 + dot(-normal, lightDir)); // wrap lighting
 	return profile * spotlight * albedo * E;
 }
 
@@ -160,32 +164,31 @@ float3 Transmittance(float3 worldpos, float3 normal, float3 lightdir, Texture2D 
 PSOUT main(PSIN input)
 {
 	PSOUT output;
-	output.color = float4(0,0,0,0);
-	output.depth = float4(0,0,0,0);
-	output.specular = float4(0,0,0,0);
-	output.discolor = float4(0,0,0,0);
+	output.Color = float4(0,0,0,0);
+	output.Depth = float4(0,0,0,0);
+	output.Specular = float4(0,0,0,0);
+	output.Discolor = float4(0,0,0,0);
 
 	// Obtain albedo, occlusion, and irradiance for ambient lighting.
-	float4 albedo = (EnableColor) ? ColorMap.Sample(SamplerAnisotropic, input.texcoord) : float4(0.5, 0.5, 0.5, 1.0);
-	float3 irradiance = (EnableIrradiance) ? IrradianceMap.Sample(SamplerLinear, input.normal).rgb : float3(1.0, 1.0, 1.0);
-	float1 occlusion = (EnableOcclusion) ? OcclusionMap.Sample(SamplerLinear, input.texcoord).r : 1.0;
+	float4 albedo = (EnableColor) ? ColorMap.Sample(SamplerAnisotropic, input.TexCoord) : float4(0.5, 0.5, 0.5, 1.0);
+	float3 irradiance = (EnableIrradiance) ? IrradianceMap.Sample(SamplerLinear, input.Normal).rgb : float3(1.0, 1.0, 1.0);
+	float1 occlusion = (EnableOcclusion) ? OcclusionMap.Sample(SamplerLinear, input.TexCoord).r : 1.0;
 
 	// Obtain intensity and roughness for specular lighting.
-	float1 intensity = (EnableSpeculars) ? SpecularMap.Sample(SamplerLinear, input.texcoord).r * Specular : Specular;
-	float1 roughness = (EnableSpeculars) ? SpecularMap.Sample(SamplerLinear, input.texcoord).g * 3.3333 * Roughness : Roughness;
+	float1 intensity = (EnableSpeculars) ? SpecularMap.Sample(SamplerLinear, input.TexCoord).r * Specular : Specular;
+	float1 roughness = (EnableSpeculars) ? SpecularMap.Sample(SamplerLinear, input.TexCoord).g * 3.3333 * Roughness : Roughness;
 	
 	// Normal mapping.
-	float3 normal = input.normal;
+	float3 normal = input.Normal;
 
-	if (EnableBumps)
-	{
+	if (EnableBumps) {
 		// Construct tangent-space basis (TBN).
-		float3 tangent = input.tangent.xyz;
-		float3 bitangent = input.tangent.w * cross(normal, tangent); // compute bitangent from normal, tangent, and its handedness
+		float3 tangent = input.Tangent.xyz;
+		float3 bitangent = input.Tangent.w * cross(normal, tangent); // compute bitangent from normal, tangent, and its handedness
 		float3x3 tbn = transpose(float3x3(tangent, bitangent, normal)); // transforms from tangent space to world space (due to transpose)
 
 		// Determine bump vector that perturbs normal.
-		float3 bump = NormalMap.Sample(SamplerAnisotropic, input.texcoord).rgb * 2.0 - 1.0; // remap from [0,1] to [-1,1]
+		float3 bump = NormalMap.Sample(SamplerAnisotropic, input.TexCoord).rgb * 2.0 - 1.0; // remap from [0,1] to [-1,1]
 		//bump.z = sqrt(1.0 - (bump.x * bump.x) - (bump.y * bump.y)); // z can be computed from xy (since normal map is normalized)
 
 		// Perturb original normal by bump map in tangent space and transform to world space.
@@ -196,67 +199,62 @@ PSOUT main(PSIN input)
 	
 	// Compute and accumulate ambient lighting.
 	float3 ambient = Ambient * occlusion * irradiance * albedo.rgb; // ambient light and occlusion
-	output.color.rgb += ambient;
+	output.Color.rgb += ambient;
 	
 
 	// Diffuse and specular lighting.
-	[unroll] for (int i = 0; i < NUM_LIGHTS; i++)
-	{
+	[unroll] for (int i = 0; i < NUM_LIGHTS; i++) {
 		Light light = Lights[i];
-		Texture2D shadowmap = ShadowMaps[i];
+		Texture2D shadowMap = ShadowMaps[i];
 
 		// Compute vector from surface position to light position.
-		float3 lightdir = light.position.xyz - input.worldpos;
-		float1 lightdist = length(lightdir); // distance to light
-		lightdir /= lightdist; // normalize surface-to-light vector
+		float3 lightDir = light.Position.xyz - input.WorldPos;
+		float1 lightDist = length(lightDir); // distance to light
+		lightDir /= lightDist; // normalize surface-to-light vector
 
 		// Cosine of angle between light direction and surface-to-light vector.
-		float1 spotangle = dot(light.direction.xyz, -lightdir);
+		float1 spotAngle = dot(light.Direction.xyz, -lightDir);
 
 		// If pixel is inside spotlight's circle of influence...
-		if (spotangle > light.falloffdist)
-		{
+		if (spotAngle > light.FalloffDist) {
 			// Compute spotlight attenuation and falloff
-			float1 curve = min(pow(lightdist / light.farplane, 6.0), 1.0);
-			float1 attenuation = (1.0 - curve) * (1.0 / (1.0 + light.attenuation * lightdist*lightdist)); // if curve=1 => att=0
-			float1 falloff = saturate((spotangle - light.falloffdist) / light.falloffwidth);
+			float1 curve = min(pow(lightDist / light.FarPlane, 6.0), 1.0);
+			float1 attenuation = (1.0 - curve) * (1.0 / (1.0 + light.Attenuation * lightDist*lightDist)); // if curve=1 => att=0
+            float1 falloff = saturate((spotAngle - light.FalloffDist) / light.FalloffWidth);
 
 			// Compute wavelength-independent diffuse and specular lighting.
-			float1 lambert = saturate(dot(normal, lightdir)); // Lambertian reflectance
-			float1 kskspec = SpecularKSK(normal, lightdir, input.viewdir, intensity, roughness); // Kelemen/Szirmay-Kalos
+			float1 lambert = saturate(dot(normal, lightDir)); // Lambertian reflectance
+			float1 kelemen = SpecularKSK(normal, lightDir, input.ViewDir, intensity, roughness); // Kelemen/Szirmay-Kalos
 
 			// Compute shadows (percentage-closer filtering).
-			float1 shadow = (EnableShadows) ? ShadowPCF(input.worldpos, light.viewproj, light.farplane, shadowmap, 3) : 1.0;
+			float1 shadow = (EnableShadows) ? ShadowPCF(input.WorldPos, light.ViewProj, light.FarPlane, shadowMap, 3) : 1.0;
 
 			// Compute per-light diffuse and specular components.
-			float3 spotlight = light.color.xyz * attenuation * falloff;
-			float3 diffuse = spotlight * albedo.rgb * lambert * shadow;
-			float3 specular = spotlight * kskspec * shadow;
+			float3 spotLight = light.Color.xyz * attenuation * falloff;
+			float3 diffuse = spotLight * albedo.rgb * lambert * shadow;
+            float3 specular = spotLight * kelemen * shadow;
 
 			// Accumulate diffuse and specular reflectance.
-			if (EnableSpeculars) // separate speculars
-			{
-				output.color.rgb += diffuse;
-				output.specular.rgb += specular;
+			if (EnableSpeculars) { // separate speculars
+				output.Color.rgb += diffuse;
+				output.Specular.rgb += specular;
 			}
-			else // speculars included in output color
-			{
-				output.color.rgb += (diffuse + specular);
+			else { // speculars included in output color
+				output.Color.rgb += (diffuse + specular);
 			}
 
 			// Compute and accumulate transmittance (translucent shadow maps).
-			if (EnableShadows)
-			{
-				output.color.rgb += Transmittance(input.worldpos, input.normal, 
-					lightdir, shadowmap, light.viewproj, light.farplane, spotlight, albedo.rgb);
+			if (EnableShadows) {
+				output.Color.rgb += Transmittance(input.WorldPos, input.Normal, 
+					lightDir, shadowMap, light.ViewProj, light.FarPlane, spotLight, albedo.rgb);
 			}
 		}
 	}
 
 	// render information to screen-space textures for later
-	output.color.a = albedo.a;
-	output.depth = input.position.w;
-	output.discolor = DiscolorMap.Sample(SamplerAnisotropic, input.texcoord);
+	output.Color.a = albedo.a;
+	output.Depth = input.Position.w;
+	output.Discolor = DiscolorMap.Sample(SamplerAnisotropic, input.TexCoord);
 	
 	return output;
 }

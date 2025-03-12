@@ -1,9 +1,7 @@
 #include "Renderer.hpp"
 
-#include <wincodec.h>
-
-#include "DirectXTex/DirectXTex.h"
-#include "DirectXTK/Inc/DDSTextureLoader.h"
+#include <DirectXTex/DirectXTex.h>
+#include <DirectXTK/Inc/DDSTextureLoader.h>
 
 #include "Mesh.hpp"
 #include "Decal.hpp"
@@ -11,27 +9,24 @@
 #include "Entity.hpp"
 #include "Camera.hpp"
 #include "Shader.hpp"
-#include "Target.hpp"
 #include "Sampler.hpp"
 #include "Texture.hpp"
-#include "Utility.hpp"
-#include "Generator.hpp"
-#include "Structures.hpp"
+#include "Util.hpp"
+#include "Structs.hpp"
 #include "FrameBuffer.hpp"
-#include "Mathematics.hpp"
+#include "Math.hpp"
+#include "RenderTarget.hpp"
 #include "VertexBuffer.hpp"
 
 
 #pragma warning(disable: 4996)
 
-constexpr auto KERNEL_SAMPLES = 9; // Must be equal to NUM_SAMPLES in Subsurface.ps.hlsl;
-
 
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
+
 using namespace SkinCut;
 using namespace SkinCut::Math;
-
 
 
 namespace SkinCut
@@ -40,11 +35,13 @@ namespace SkinCut
 }
 
 
+constexpr auto KERNEL_SAMPLES = 9; // Must be equal to NUM_SAMPLES in Subsurface.ps.hlsl;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP
 
-Renderer::Renderer(HWND hwnd, uint32_t width, uint32_t height)
-: mWidth(width), mHeight(height)
+Renderer::Renderer(HWND hwnd, uint32_t width, uint32_t height) : mWidth(width), mHeight(height)
 {
 	InitializeDevice(hwnd);
 	InitializeShaders();
@@ -83,7 +80,7 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 }
 
 
-void Renderer::Render(std::vector<std::shared_ptr<Entity>>& models, std::vector<std::shared_ptr<Light>>& lights, std::unique_ptr<Camera>& camera)
+void Renderer::Render(std::vector<std::shared_ptr<Entity>>& models, std::vector<std::shared_ptr<Light>>& lights, std::shared_ptr<Camera>& camera)
 {
 	for (auto& model : models) {
 		if (!model) {
@@ -96,7 +93,6 @@ void Renderer::Render(std::vector<std::shared_ptr<Entity>>& models, std::vector<
 				RenderLighting(model, lights, camera);	// Main shading (ambient, diffuse, speculars, bumps, shadows, translucency)
 				RenderScattering();						// Screen-space subsurface scattering
 				RenderSpeculars();						// Screen-space specular lighting
-				//RenderDecals(camera);
 				break;
 			}
 
@@ -145,14 +141,14 @@ void Renderer::InitializeDevice(HWND hwnd)
 	swapDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // sRGB format that supports 8 bits per channel including alpha
 	swapDesc.BufferDesc.RefreshRate.Numerator = 60;
 	swapDesc.BufferDesc.RefreshRate.Denominator = 1;
-	swapDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // image stretching for a given resolution
+	swapDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // Image stretching for a given resolution
 	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
 	swapDesc.OutputWindow = hwnd;
 	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;	// DXGI discard the contents of the back buffer after calling IDXGISwapChain::Present
 	swapDesc.Windowed = TRUE;
 	swapDesc.SampleDesc.Count = 1;
 	swapDesc.SampleDesc.Quality = 0;
-	swapDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // enable application to switch modes by calling IDXGISwapChain::ResizeTarget
+	swapDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // Enable application to switch modes by calling IDXGISwapChain::ResizeTarget
 
 	// Create Direct3D device, device context, and swapchain.
 	HRESULT hresult;
@@ -183,7 +179,7 @@ void Renderer::InitializeShaders()
 	D3D11_DEPTH_STENCIL_DESC dsdesc;
 
 	auto ShaderPath = [&](std::wstring name) {
-		std::wstring resourcePath = Utility::str2wstr(gConfig.ResourcePath);
+		std::wstring resourcePath = Util::wstr(gConfig.ResourcePath);
 		return resourcePath + L"Shaders\\" + name;
 	};
 
@@ -284,17 +280,13 @@ void Renderer::InitializeResources()
 	mResources.emplace("decal", decal);
 	mResources.emplace("beckmann", beckmann);
 	mResources.emplace("irradiance", irradiance);
-
-// 	Matrix transform = Matrix::CreateScale(0.2) * Matrix::CreateTranslation(0, 0.75, 0);
-// 	auto decal = std::shared_ptr<Decal>(new Decal(mDevice, decal, transform, Vector3(0,1,0)));
-// 	mDecals.push_back(decal);
 }
 
 
 void Renderer::InitializeRasterizer()
 {
 	D3D11_RASTERIZER_DESC rasterizerDesc;
-	ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
+	::ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
 	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 	rasterizerDesc.CullMode = D3D11_CULL_BACK;
 	rasterizerDesc.FrontCounterClockwise = FALSE;
@@ -319,9 +311,9 @@ void Renderer::InitializeTargets()
 	mScreenBuffer = std::make_shared<VertexBuffer>(mDevice);
 
 	// Various render targets
-	auto targetDepth = std::make_shared<Target>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R32_FLOAT);
-	auto targetSpecular = std::make_shared<Target>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-	auto targetDiscolor = std::make_shared<Target>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+	auto targetDepth = std::make_shared<RenderTarget>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R32_FLOAT);
+	auto targetSpecular = std::make_shared<RenderTarget>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+	auto targetDiscolor = std::make_shared<RenderTarget>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
 	mTargets.emplace("depth", targetDepth);
 	mTargets.emplace("specular", targetSpecular);
@@ -333,18 +325,18 @@ void Renderer::InitializeKernel()
 {
 	mKernel.resize(KERNEL_SAMPLES);
 
-	Vector3 falloff(0.57f, 0.13f, 0.08f);	// note: cannot be zero
+	Vector3 fallOff(0.57f, 0.13f, 0.08f);	// note: cannot be zero
 	Vector3 strength(0.78f, 0.70f, 0.75f);
 
 
 	auto gaussian = [&](float v, float r)
 	{
-		float rx = r / falloff.x;			// fine-tune shape of Gaussian (red channel)
-		float ry = r / falloff.y;			// fine-tune shape of Gaussian (green channel)
-		float rz = r / falloff.z;			// fine-tune shape of Gaussian (blue channel)
+		float rx = r / fallOff.x;			// fine-tune shape of Gaussian (red channel)
+		float ry = r / fallOff.y;			// fine-tune shape of Gaussian (green channel)
+		float rz = r / fallOff.z;			// fine-tune shape of Gaussian (blue channel)
 
 		float w = 2.0f * v;					// width of the Gaussian
-		float a = 1.0f / (w * float(cPI));	// height of the curve's peak
+		float a = 1.0f / (w * float(PI));	// height of the curve's peak
 
 		// compute the curve of the gaussian
 		return Vector3(a * exp(-(rx * rx) / w),
@@ -352,12 +344,11 @@ void Renderer::InitializeKernel()
 			           a * exp(-(rz * rz) / w));
 	};
 
-	auto profile = [&](float r)
-	{
-		// the red channel of the original skin profile in [d'Eon07] is used for all three channels
+	auto Profile = [&](float r) {
+		// The red channel of the original skin profile in [d'Eon07] is used for all three channels
 
 		Vector3 profile;
-// 		profile += 0.233 * gaussian(0.0064, r); // considered as directly scattered light
+ 		//profile += 0.233 * gaussian(0.0064, r); // Omitted since it is considered as directly scattered light
 		profile += 0.100 * gaussian(0.0484, r);
 		profile += 0.118 * gaussian(0.1870, r);
 		profile += 0.113 * gaussian(0.5670, r);
@@ -379,16 +370,20 @@ void Renderer::InitializeKernel()
 
 
 	// compute kernel weights
-	Vector3 weight_sum;
+	Vector3 weightSum;
 
 	for (uint8_t i = 0; i < KERNEL_SAMPLES; ++i) {
 		float w0 = 0.0f, w1 = 0.0f;
-		if (i > 0)                  w0 = abs(mKernel[i].w - mKernel[i-1].w);
-		if (i < KERNEL_SAMPLES - 1) w1 = abs(mKernel[i].w - mKernel[i+1].w);
+		if (i > 0) {
+			w0 = abs(mKernel[i].w - mKernel[i - 1].w);
+		}
+		if (i < KERNEL_SAMPLES - 1) {
+			w1 = abs(mKernel[i].w - mKernel[i + 1].w);
+		}
 		float area = (w0 + w1) / 2.0f;
 
-		Vector3 weight = profile(mKernel[i].w) * area;
-		weight_sum += weight;
+		Vector3 weight = Profile(mKernel[i].w) * area;
+		weightSum += weight;
 
 		mKernel[i].x = weight.x;
 		mKernel[i].y = weight.y;
@@ -397,9 +392,9 @@ void Renderer::InitializeKernel()
 
 	// weights re-normalized to white so that diffuse color map provides final skin tone
 	for (uint8_t i = 0; i < KERNEL_SAMPLES; ++i) {
-		mKernel[i].x /= weight_sum.x;
-		mKernel[i].y /= weight_sum.y;
-		mKernel[i].z /= weight_sum.z;
+		mKernel[i].x /= weightSum.x;
+		mKernel[i].y /= weightSum.y;
+		mKernel[i].z /= weightSum.z;
 	}
 
 
@@ -515,11 +510,9 @@ void Renderer::Draw(std::shared_ptr<Entity>& model,
 	if (numPixelBuffers > 0) {
 		mContext->PSSetConstantBuffers(0, numPixelBuffers, shader->mPixelBuffers[0].GetAddressOf());
 	}
-
 	if (numResources > 0) {
 		mContext->PSSetShaderResources(0, numResources, &resources[0]);
 	}
-
 	if (numSamplers > 0) {
 		mContext->PSSetSamplers(0, numSamplers, &samplers[0]);
 	}
@@ -543,17 +536,17 @@ void Renderer::Draw(std::shared_ptr<Entity>& model,
 }
 
 
-void Renderer::RenderDepth(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::unique_ptr<Camera>& camera)
+void Renderer::RenderDepth(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::shared_ptr<Camera>& camera)
 {
 	if (!gConfig.EnableShadows) { return; }
 
 	auto& shaderDepth = mShaders.at("depth");
 
 	for (auto& light : lights) {
-		// skip if light has no intensity
+		// Skip if light has no intensity
 		if (light->mBrightness <= 0.0f) { return; }
 
-		// update world view projection matrix
+		// Update world view projection matrix
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		HREXCEPT(mContext->Map(shaderDepth->mVertexBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 		CB_DEPTH_VS* cbvsShadow = (CB_DEPTH_VS*)mappedResource.pData;
@@ -573,17 +566,14 @@ void Renderer::RenderDepth(std::shared_ptr<Entity>& model, std::vector<std::shar
 }
 
 
-void Renderer::RenderLighting(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::unique_ptr<Camera>& camera)
+void Renderer::RenderLighting(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::shared_ptr<Camera>& camera)
 {
 	auto& shaderKelemen = mShaders.at("kelemen");
-
 	auto& textureBeckmann = mResources.at("beckmann");
 	auto& textureIrradiance = mResources.at("irradiance");
-
 	auto& samplerLinear = mSamplers.at("linear");
 	auto& samplerComparison = mSamplers.at("comparison");
 	auto& samplerAnisotropic = mSamplers.at("anisotropic");
-
 	auto& targetDepth = mTargets.at("depth");
 	auto& targetSpecular = mTargets.at("specular");
 	auto& targetDiscolor = mTargets.at("discolor");
@@ -592,9 +582,9 @@ void Renderer::RenderLighting(std::shared_ptr<Entity>& model, std::vector<std::s
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	HREXCEPT(mContext->Map(shaderKelemen->mVertexBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	CB_LIGHTING_VS* cbvsLighting = (CB_LIGHTING_VS*)mappedResource.pData;
-	cbvsLighting->WVP = model->mMatrixWVP;
+	cbvsLighting->WorldViewProjection = model->mMatrixWVP;
 	cbvsLighting->World = model->mMatrixWorld;
-	cbvsLighting->WorldIT = model->mMatrixWorld.Invert().Transpose();
+	cbvsLighting->WorldInverseTranspose = model->mMatrixWorld.Invert().Transpose();
 	cbvsLighting->Eye = camera->mEye;
 	mContext->Unmap(shaderKelemen->mVertexBuffers[0].Get(), 0);
 	
@@ -648,8 +638,9 @@ void Renderer::RenderLighting(std::shared_ptr<Entity>& model, std::vector<std::s
 	resources.push_back(model->mDiscolorMap.Get());
 	resources.push_back(textureBeckmann->mShaderResource.Get());
 	resources.push_back(textureIrradiance->mShaderResource.Get());
-	for (uint8_t i = 0; i < 5; ++i) {
-		resources.push_back(lights[i]->mShadowMap->mDepthResource.Get());
+
+	for (auto& light : lights) {
+		resources.push_back(light->mShadowMap->mDepthResource.Get());
 	}
 	
 	// accumulate pixel shader samplers
@@ -665,8 +656,8 @@ void Renderer::RenderLighting(std::shared_ptr<Entity>& model, std::vector<std::s
 	ClearBuffer(targetDiscolor);
 
 	// draw model
-	D3D11_FILL_MODE fillmode = (gConfig.EnableWireframe) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
-	Draw(model, shaderKelemen, mBackBuffer, targets, resources, samplers, fillmode);
+	D3D11_FILL_MODE fillMode = (gConfig.EnableWireframe) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+	Draw(model, shaderKelemen, mBackBuffer, targets, resources, samplers, fillMode);
 
 	// remove shader bindings
 	UnbindResources(static_cast<uint32_t>(resources.size()));
@@ -679,22 +670,19 @@ void Renderer::RenderScattering()
 	if (!gConfig.EnableScattering) { return; }
 
 	auto& shaderScatter = mShaders.at("scatter");
-
 	auto& samplerPoint = mSamplers.at("point");
 	auto& samplerLinear = mSamplers.at("linear");
-
 	auto& targetDepth = mTargets.at("depth");
 	auto& targetDiscolor = mTargets.at("discolor");
 	
-	// create and clear new temporary render target
-	auto targetTemp = std::make_shared<Target>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+	// Create and clear \ temporary render target
+	auto targetTemp = std::make_shared<RenderTarget>(mDevice, mContext, mWidth, mHeight, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
-
-	// update field of view, scatter width, and set scatter vector in horizontal direction
+	// Update field of view, scatter width, and set scatter vector in horizontal direction
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	HREXCEPT(mContext->Map(shaderScatter->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	CB_SCATTERING_PS* cbps = (CB_SCATTERING_PS*)mappedResource.pData;
-	cbps->FOVY = Camera::cFieldOfView;
+	cbps->FieldOfViewY = Camera::cFieldOfView;
 	cbps->Width = gConfig.Convolution;
 	cbps->Direction = XMFLOAT2(1,0);
 	for (uint8_t i = 0; i < mKernel.size(); ++i) {
@@ -702,34 +690,26 @@ void Renderer::RenderScattering()
 	}
 	mContext->Unmap(shaderScatter->mPixelBuffers[0].Get(), 0);
 
-	// accumulate render targets
-	std::vector<ID3D11RenderTargetView*> targets = {
-		targetTemp->mRenderTarget.Get()
-	};
+	// Accumulate render targets
+	std::vector<ID3D11RenderTargetView*> targets = { targetTemp->mRenderTarget.Get() };
 
-	// accumulate pixel shader resources
-	std::vector<ID3D11ShaderResourceView*> resources = {
-		mBackBuffer->mColorResource.Get(),
-		targetDepth->mShaderResource.Get(),
-		targetDiscolor->mShaderResource.Get()
-	};
+	// Accumulate pixel shader resources
+	std::vector<ID3D11ShaderResourceView*> resources = { mBackBuffer->mColorResource.Get(), 
+		targetDepth->mShaderResource.Get(), targetDiscolor->mShaderResource.Get() };
 	
-	// accumulate pixel shader samplers
-	std::vector<ID3D11SamplerState*> samplers = {
-		samplerPoint->mSamplerState.Get(),
-		samplerLinear->mSamplerState.Get()
-	};
+	// Accumulate pixel shader samplers
+	std::vector<ID3D11SamplerState*> samplers = { samplerPoint->mSamplerState.Get(), samplerLinear->mSamplerState.Get() };
 	
 
-	// horizontal scattering (blur filter)
+	// Horizontal scattering (blur filter)
 	Draw(mScreenBuffer, shaderScatter, mBackBuffer->mViewport, nullptr, targets, resources, samplers);
 	UnbindRenderTargets(static_cast<uint32_t>(targets.size()));
 
 
-	// set scatter vector in vertical direction
+	// Set scatter vector in vertical direction
 	HREXCEPT(mContext->Map(shaderScatter->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	cbps = (CB_SCATTERING_PS*)mappedResource.pData;
-	cbps->FOVY = Camera::cFieldOfView;
+	cbps->FieldOfViewY = Camera::cFieldOfView;
 	cbps->Width = gConfig.Convolution;
 	cbps->Direction = XMFLOAT2(0,1);
 	for (uint8_t i = 0; i < mKernel.size(); ++i) {
@@ -737,15 +717,8 @@ void Renderer::RenderScattering()
 	}
 	mContext->Unmap(shaderScatter->mPixelBuffers[0].Get(), 0);
 	
-	targets = {
-		mBackBuffer->mColorBuffer.Get()
-	};
-
-	resources = {
-		targetTemp->mShaderResource.Get(),
-		targetDepth->mShaderResource.Get(),
-		targetDiscolor->mShaderResource.Get()
-	};
+	targets = { mBackBuffer->mColorBuffer.Get() };
+	resources = { targetTemp->mShaderResource.Get(), targetDepth->mShaderResource.Get(), targetDiscolor->mShaderResource.Get() };
 
 	// vertical scattering (blur filter)
 	Draw(mScreenBuffer, shaderScatter, mBackBuffer->mViewport, mBackBuffer->mDepthBuffer.Get(), targets, resources, samplers);
@@ -761,182 +734,24 @@ void Renderer::RenderSpeculars()
 	auto& shaderSpecular = mShaders.at("specular");
 	auto& targetSpecular = mTargets.at("specular");
 
-	std::vector<ID3D11RenderTargetView*> targets = {
-		mBackBuffer->mColorBuffer.Get()
-	};
-
-	std::vector<ID3D11ShaderResourceView*> resources = {
-		targetSpecular->mShaderResource.Get()
-	};
-
-	std::vector<ID3D11SamplerState*> samplers = {
-		samplerPoint->mSamplerState.Get()
-	};
+	std::vector<ID3D11RenderTargetView*> targets = { mBackBuffer->mColorBuffer.Get() };
+	std::vector<ID3D11ShaderResourceView*> resources = { targetSpecular->mShaderResource.Get() };
+	std::vector<ID3D11SamplerState*> samplers = { samplerPoint->mSamplerState.Get() };
 
 	Draw(mScreenBuffer, shaderSpecular, mBackBuffer->mViewport, nullptr, targets, resources, samplers);
 	UnbindRenderTargets(static_cast<uint32_t>(targets.size()));
 }
 
 
-void Renderer::RenderDecals(std::unique_ptr<Camera>& camera)
-{
-	// SCREEN-SPACE DECALS:
-	// 1. DrawDecal underlying geometries onto scene
-	// 2. Rasterize a screen-space decal (SSD) box
-	// 3. Read the depth buffer for each pixel
-	// 4. Calculate 3D position from the depth
-	// 5. Reject if this position is outside the box
-	// 6. Otherwise: draw pixel with decal texture
-
-	if (mDecals.size() == 0) { return; }
-
-	auto& shaderDecal = mShaders.at("decal");
-	auto& samplerLinear = mSamplers.at("linear");
-
-	// copy depth information to temporary buffer
-	ComPtr<ID3D11Texture2D> tempTex;
-	ComPtr<ID3D11ShaderResourceView> tempSrv;
-
-	D3D11_TEXTURE2D_DESC texDesc;
-	mBackBuffer->mDepthTexture->GetDesc(&texDesc);
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	mDevice->CreateTexture2D(&texDesc, nullptr, tempTex.GetAddressOf());
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	mBackBuffer->mDepthResource->GetDesc(&srvDesc);
-	mDevice->CreateShaderResourceView(tempTex.Get(), &srvDesc, tempSrv.GetAddressOf());
-
-	mContext->CopyResource(tempTex.Get(), mBackBuffer->mDepthTexture.Get());
-	
-
-	for (auto& decal : mDecals) {
-		// set shader buffers
-		D3D11_MAPPED_SUBRESOURCE msr;
-		HREXCEPT(mContext->Map(shaderDecal->mVertexBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
-		CB_DECAL_VS* cbvs = (CB_DECAL_VS*)msr.pData;
-		cbvs->World = decal->mWorldMatrix;
-		cbvs->View = camera->mView;
-		cbvs->Projection = camera->mProjection;
-		cbvs->DecalNormal = Vector4((float*)decal->mNormal);
-		mContext->Unmap(shaderDecal->mVertexBuffers[0].Get(), 0);
-
-		HREXCEPT(mContext->Map(shaderDecal->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
-		CB_DECAL_PS* decalData = (CB_DECAL_PS*)msr.pData;
-		decalData->InvWorld = Utility::MatrixInverse(decal->mWorldMatrix);
-		decalData->InvView = Utility::MatrixInverse(camera->mView);
-		decalData->InvProject = Utility::MatrixInverse(camera->mProjection);
-		mContext->Unmap(shaderDecal->mPixelBuffers[0].Get(), 0);
-
-		std::vector<ID3D11RenderTargetView*> targets = {
-			mBackBuffer->mColorBuffer.Get()
-		};
-
-		std::vector<ID3D11ShaderResourceView*> resources = {
-			tempSrv.Get(),
-			decal->mTexture->mShaderResource.Get()
-		};
-
-		std::vector<ID3D11SamplerState*> samplers = {
-			samplerLinear->mSamplerState.Get()
-		};
-
-		uint32_t numVertexBuffers = static_cast<uint32_t>(shaderDecal->mVertexBuffers.size());
-		uint32_t numPixelBuffers = static_cast<uint32_t>(shaderDecal->mPixelBuffers.size());
-		uint32_t numResources = static_cast<uint32_t>(resources.size());
-		uint32_t numSamplers = static_cast<uint32_t>(samplers.size());
-
-		mContext->IASetInputLayout(shaderDecal->mInputLayout.Get());
-		mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		mContext->IASetIndexBuffer(decal->mIndexBuffer.Get(), decal->mIndexBufferFormat, decal->mIndexBufferOffset);
-		mContext->IASetVertexBuffers(0, 1, decal->mVertexBuffer.GetAddressOf(), &decal->mVertexBufferStrides, &decal->mVertexBufferOffset);
-
-		mContext->VSSetShader(shaderDecal->mVertexShader.Get(), nullptr, 0);
-		mContext->VSSetConstantBuffers(0, numVertexBuffers, shaderDecal->mVertexBuffers[0].GetAddressOf());
-
-		mContext->PSSetShader(shaderDecal->mPixelShader.Get(), nullptr, 0);
-		mContext->PSSetConstantBuffers(0, numPixelBuffers, shaderDecal->mPixelBuffers[0].GetAddressOf());
-		mContext->PSSetShaderResources(0, numResources, &resources[0]);
-		mContext->PSSetSamplers(0, numSamplers, &samplers[0]);
-
-		mContext->RSSetState(mRasterizer.Get());
-		mContext->RSSetViewports(1, &mBackBuffer->mViewport);
-
-		mContext->OMSetRenderTargets(1, mBackBuffer->mColorBuffer.GetAddressOf(), mBackBuffer->mDepthBuffer.Get());
-		mContext->OMSetDepthStencilState(shaderDecal->mDepthState.Get(), shaderDecal->mStencilRef);
-		mContext->OMSetBlendState(shaderDecal->mBlendState.Get(), shaderDecal->mBlendFactor, shaderDecal->mBlendMask);
-
-		mContext->DrawIndexed(decal->mIndexCount, 0, 0);
-
-		UnbindRenderTargets(0);
-		UnbindResources(numResources);
-	}
-}
-
-
-void Renderer::CreateWoundDecal(Intersection& ix)
-{
-	auto& decalTexture = mResources.at("decal");
-
-	// create rotation matrix from direction vector
-	Vector3 position = ix.pos_ws;
-	Vector3 dir = Vector3::Normalize(-ix.ray.direction);
-
-	Vector3 forward = Vector3::Normalize(Vector3(1,0,0));
-// 	Vector3 right = Vector3::Normalize(Vector3::Cross(dir, Vector3(0,1,0)));
-// 	Vector3 up = Vector3::Cross(right, forward);
-// 
-// 	Matrix rotation = Matrix::Identity();
-// 	rotation.Forward(dir);
-// 	rotation.Right(right);
-// 	rotation.Up(up);
-
-// 	float r = std::sqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
-// 	float t = std::atan2(dir.y, dir.x);
-// 	float p = std::acos(dir.z / r);
-// 	Matrix rotation = Matrix::CreateRotationX(t) * Matrix::CreateRotationZ(p);
-
-	float yaw = std::atan2f(dir.x, dir.y);
-	float pitch = std::atan2f(dir.z, std::sqrtf((dir.x * dir.x) + (dir.y * dir.y)));
-	Matrix rotation = Matrix::CreateRotationY(yaw) * Matrix::CreateRotationX(pitch);
-
-// 	Matrix rotation = DirectX::XMMatrixLookAtLH(Vector3(0,0,0), forward, Vector3(0,1,0));
-// 	rotation.Transpose();
-	//Matrix rotation = Matrix::CreateLookAt(Vector3::Null(), Vector3(0,0,1), Vector3(0,1,0)).Transpose();
-	//Matrix rotation = Matrix::CreateRotationX(-1.57f);
-	Matrix translation = Matrix::CreateTranslation(ix.pos_ws);
-	Matrix scaling = Matrix::CreateScale(0.2);
-
-	Matrix transform = scaling * rotation * translation;
-	auto decal = std::make_shared<Decal>(mDevice, decalTexture, transform, dir);
-	mDecals.push_back(decal);
-}
-
-
-
-void Renderer::CreateWoundDecal(Intersection& i0, Intersection& i1)
-{
-	// acquire center position, scale, and average normal from intersections
-	Vector3 position = Vector3::Lerp(i0.pos_ws, i1.pos_ws, 0.5f);
-	Vector3 normal = -Vector3::Normalize(Vector3::Lerp(i0.ray.direction, i1.ray.direction, 0.5f));
-
-	auto& decalTexture = mResources.at("decal");
-
-	Matrix transform = Matrix::CreateScale(0.2) * Matrix::CreateTranslation(position);
-	auto decal = std::make_shared<Decal>(mDevice, decalTexture, transform, normal);
-	mDecals.push_back(decal);
-}
-
-
-void Renderer::PaintWoundPatch(std::shared_ptr<Entity>& model, std::shared_ptr<Target>& patch, std::map<Link, std::vector<Face*>>& innerFaces, float cutLength, float cutheight)
+void Renderer::ApplyPatch(std::shared_ptr<Entity>& model, std::shared_ptr<RenderTarget>& patch, std::map<Link, std::vector<Face*>>& innerFaces, float cutLength, float cutHeight)
 {
 	auto& shaderWound = mShaders.at("wound");
 	auto& samplerLinear = mSamplers.at("linear");
 
 	auto SetupVertices = [&](Face*& face) -> std::vector<VertexPositionTexture> {
-		Vector2 t0 = model->mMesh->mVertexes[face->v[0]].texcoord;
-		Vector2 t1 = model->mMesh->mVertexes[face->v[1]].texcoord;
-		Vector2 t2 = model->mMesh->mVertexes[face->v[2]].texcoord;
+		Vector2 t0 = model->mMesh->mVertexes[face->Verts[0]].TexCoord;
+		Vector2 t1 = model->mMesh->mVertexes[face->Verts[1]].TexCoord;
+		Vector2 t2 = model->mMesh->mVertexes[face->Verts[2]].TexCoord;
 
 		Vector3 p0 = Vector3(t0.x * 2.0f - 1.0f, (1.0f - t0.y) * 2.0f - 1.0f, 0.0f);
 		Vector3 p1 = Vector3(t1.x * 2.0f - 1.0f, (1.0f - t1.y) * 2.0f - 1.0f, 0.0f);
@@ -949,32 +764,32 @@ void Renderer::PaintWoundPatch(std::shared_ptr<Entity>& model, std::shared_ptr<T
 	// Acquire texture properties
 	D3D11_TEXTURE2D_DESC colorDesc;
 	ComPtr<ID3D11Texture2D> colorTex;
-	Utility::GetTexture2D(model->mColorMap, colorTex, colorDesc);
+	Util::GetTexture2D(model->mColorMap, colorTex, colorDesc);
 
 	// starting texcoord for sampling
 	float offset = cutLength * 0.025f; // properly align first segment
 
 	// Create generic vertex buffer
-	auto buffer = std::unique_ptr<VertexBuffer>(new VertexBuffer(mDevice));
+	auto buffer = std::make_unique<VertexBuffer>(mDevice);
 	buffer->mTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	
-	// DrawDecal to color map
-	auto rtColor = std::unique_ptr<Target>(new Target(mDevice, mContext, colorDesc.Width, colorDesc.Height, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, colorTex));
+	// Draw decal to color map
+	auto rtColor = std::make_unique<RenderTarget>(mDevice, mContext, colorDesc.Width, colorDesc.Height, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, colorTex);
 	
 	// Loop over faces
-	for (auto& linkfaces : innerFaces) {
-		for (auto& face : linkfaces.second) {
+	for (auto& linkFaces : innerFaces) {
+		for (auto& face : linkFaces.second) {
 			auto vertices = SetupVertices(face);
 			buffer->SetVertices(vertices);
 
-			D3D11_MAPPED_SUBRESOURCE msr_wound;
-			HREXCEPT(mContext->Map(shaderWound->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr_wound));
-			CB_PAINT_PS* cbps_wound = (CB_PAINT_PS*)msr_wound.pData;
-			cbps_wound->P0 = linkfaces.first.x0;
-			cbps_wound->P1 = linkfaces.first.x1;
-			cbps_wound->Offset = offset;
-			cbps_wound->CutLength = (linkfaces.first.rank == innerFaces.size()-1) ? cutLength + cutLength * 0.05f : cutLength; // properly align last segment
-			cbps_wound->CutHeight = cutheight;
+			D3D11_MAPPED_SUBRESOURCE msrWound;
+			HREXCEPT(mContext->Map(shaderWound->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msrWound));
+			CB_PAINT_PS* cbpsWound = (CB_PAINT_PS*)msrWound.pData;
+			cbpsWound->Point0 = linkFaces.first.TexCoord0;
+			cbpsWound->Point1 = linkFaces.first.TexCoord1;
+			cbpsWound->Offset = offset;
+			cbpsWound->CutLength = (linkFaces.first.Rank == innerFaces.size()-1) ? cutLength + cutLength * 0.05f : cutLength; // properly align last segment
+			cbpsWound->CutHeight = cutHeight;
 			mContext->Unmap(shaderWound->mPixelBuffers[0].Get(), 0);
 
 			mContext->IASetInputLayout(shaderWound->mInputLayout.Get());
@@ -993,21 +808,21 @@ void Renderer::PaintWoundPatch(std::shared_ptr<Entity>& model, std::shared_ptr<T
 			mContext->Draw(buffer->mVertexCount, 0);
 		}
 
-		offset += Vector2::Distance(linkfaces.first.x0, linkfaces.first.x1);
+		offset += Vector2::Distance(linkFaces.first.TexCoord0, linkFaces.first.TexCoord1);
 	}
 
 	model->mColorMap = rtColor->mShaderResource;
 }
 
 
-void Renderer::PaintDiscoloration(std::shared_ptr<Entity>& model, std::map<Link, std::vector<Face*>>& outerFaces, float cutheight)
+void Renderer::ApplyDiscolor(std::shared_ptr<Entity>& model, std::map<Link, std::vector<Face*>>& outerFaces, float cutheight)
 {
 	auto& shaderDiscolor = mShaders.at("discolor");
 
 	auto SetupVertices = [&](Face*& face) -> std::vector<VertexPositionTexture> {
-		Vector2 t0 = model->mMesh->mVertexes[face->v[0]].texcoord;
-		Vector2 t1 = model->mMesh->mVertexes[face->v[1]].texcoord;
-		Vector2 t2 = model->mMesh->mVertexes[face->v[2]].texcoord;
+		Vector2 t0 = model->mMesh->mVertexes[face->Verts[0]].TexCoord;
+		Vector2 t1 = model->mMesh->mVertexes[face->Verts[1]].TexCoord;
+		Vector2 t2 = model->mMesh->mVertexes[face->Verts[2]].TexCoord;
 
 		Vector3 p0 = Vector3(t0.x * 2.0f - 1.0f, (1.0f - t0.y) * 2.0f - 1.0f, 0.0f);
 		Vector3 p1 = Vector3(t1.x * 2.0f - 1.0f, (1.0f - t1.y) * 2.0f - 1.0f, 0.0f);
@@ -1020,20 +835,20 @@ void Renderer::PaintDiscoloration(std::shared_ptr<Entity>& model, std::map<Link,
 	// Acquire texture properties
 	D3D11_TEXTURE2D_DESC discolorDesc;
 	ComPtr<ID3D11Texture2D> discolorTex;
-	Utility::GetTexture2D(model->mDiscolorMap, discolorTex, discolorDesc);
+	Util::GetTexture2D(model->mDiscolorMap, discolorTex, discolorDesc);
 
 	// Create generic vertex buffer
-	auto buffer = std::unique_ptr<VertexBuffer>(new VertexBuffer(mDevice));
+	auto buffer = std::make_unique<VertexBuffer>(mDevice);
 	buffer->mTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	
 	// DrawDecal to discolor texture
-	auto target = std::unique_ptr<Target>(new Target(mDevice, mContext, discolorDesc.Width, discolorDesc.Height, DXGI_FORMAT_B8G8R8A8_UNORM, discolorTex));
+	auto target = std::make_unique<RenderTarget>(mDevice, mContext, discolorDesc.Width, discolorDesc.Height, DXGI_FORMAT_B8G8R8A8_UNORM, discolorTex);
 
 	// Configure blending
 	D3D11_RENDER_TARGET_BLEND_DESC rtbDesc{};
 	rtbDesc.BlendEnable = TRUE;
-	rtbDesc.SrcBlend = D3D11_BLEND_SRC_COLOR;				// pixel shader
-	rtbDesc.DestBlend = D3D11_BLEND_INV_DEST_COLOR;		// render target
+	rtbDesc.SrcBlend = D3D11_BLEND_SRC_COLOR;			// Pixel shader
+	rtbDesc.DestBlend = D3D11_BLEND_INV_DEST_COLOR;		// Render target
 	rtbDesc.BlendOp = D3D11_BLEND_OP_ADD;
 	rtbDesc.SrcBlendAlpha = D3D11_BLEND_ONE;
 	rtbDesc.DestBlendAlpha = D3D11_BLEND_ONE;
@@ -1042,7 +857,7 @@ void Renderer::PaintDiscoloration(std::shared_ptr<Entity>& model, std::map<Link,
 	target->SetBlendState(rtbDesc, Color(1,1,1,1), 0xffffffff);
 
 	// Random discoloration color
-	Vector4 discolor(Utility::Random(0.85f, 0.95f), Utility::Random(0.60f, 0.75f), Utility::Random(0.60f, 0.85f), 1.0f);
+	Vector4 discolor(Util::Random(0.85f, 0.95f), Util::Random(0.60f, 0.75f), Util::Random(0.60f, 0.85f), 1.0f);
 	
 	// Loop over faces
 	for (auto& linkfaces : outerFaces) {
@@ -1054,8 +869,8 @@ void Renderer::PaintDiscoloration(std::shared_ptr<Entity>& model, std::map<Link,
 			HREXCEPT(mContext->Map(shaderDiscolor->mPixelBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr_discolor));
 			CB_DISCOLOR_PS* cbps_discolor = (CB_DISCOLOR_PS*)msr_discolor.pData;
 			cbps_discolor->Discolor = discolor;
-			cbps_discolor->Point0 = outerFaces.begin()->first.x0; // first point of cutting line
-			cbps_discolor->Point1 = outerFaces.rbegin()->first.x1; // final point of cutting line
+			cbps_discolor->Point0 = outerFaces.begin()->first.TexCoord0; // first point of cutting line
+			cbps_discolor->Point1 = outerFaces.rbegin()->first.TexCoord1; // final point of cutting line
 			cbps_discolor->MaxDistance = cutheight;
 			mContext->Unmap(shaderDiscolor->mPixelBuffers[0].Get(), 0);
 
@@ -1082,7 +897,7 @@ void Renderer::PaintDiscoloration(std::shared_ptr<Entity>& model, std::map<Link,
 ///////////////////////////////////////////////////////////////////////////////
 // ALTERNATIVE RENDERERS
 
-void Renderer::RenderBlinnPhong(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::unique_ptr<Camera>& camera)
+void Renderer::RenderBlinnPhong(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::shared_ptr<Camera>& camera)
 {
 	auto& shaderPhong = mShaders.at("phong");
 	auto& samplerLinear = mSamplers.at("linear");
@@ -1091,7 +906,7 @@ void Renderer::RenderBlinnPhong(std::shared_ptr<Entity>& model, std::vector<std:
 	HREXCEPT(mContext->Map(shaderPhong->mVertexBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
 	CB_PHONG_VS* cbvs = (CB_PHONG_VS*)msr.pData;
 	cbvs->World = model->mMatrixWorld;
-	cbvs->WorldIT = model->mMatrixWorld.Invert().Transpose();
+	cbvs->WorldInverseTranspose = model->mMatrixWorld.Invert().Transpose();
 	cbvs->WorldViewProjection = model->mMatrixWVP;
 	cbvs->ViewPosition = Vector4((float*)camera->mEye);
 	cbvs->LightDirection = Vector4(1,-1,0,0);
@@ -1125,14 +940,14 @@ void Renderer::RenderBlinnPhong(std::shared_ptr<Entity>& model, std::vector<std:
 }
 
 
-void Renderer::RenderLambertian(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::unique_ptr<Camera>& camera)
+void Renderer::RenderLambertian(std::shared_ptr<Entity>& model, std::vector<std::shared_ptr<Light>>& lights, std::shared_ptr<Camera>& camera)
 {
 	auto& shaderLambert = mShaders.at("lambert");
 
 	D3D11_MAPPED_SUBRESOURCE msr;
 	HREXCEPT(mContext->Map(shaderLambert->mVertexBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
 	CB_LAMBERTIAN_VS* cbvs = (CB_LAMBERTIAN_VS*)msr.pData;
-	cbvs->WorldIT = model->mMatrixWorld.Invert().Transpose();
+	cbvs->WorldInverseTranspose = model->mMatrixWorld.Invert().Transpose();
 	cbvs->WorldViewProjection = model->mMatrixWVP;
 	mContext->Unmap(shaderLambert->mVertexBuffers[0].Get(), 0);
 
@@ -1166,7 +981,7 @@ void Renderer::RenderLambertian(std::shared_ptr<Entity>& model, std::vector<std:
 void Renderer::SetRasterizerState(D3D11_FILL_MODE fillmode, D3D11_CULL_MODE cullmode)
 {
 	D3D11_RASTERIZER_DESC rasterizerDesc;
-	ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
+	::ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
 	rasterizerDesc.FillMode = fillmode;
 	rasterizerDesc.CullMode = cullmode;
 	rasterizerDesc.FrontCounterClockwise = FALSE;
@@ -1193,7 +1008,7 @@ void Renderer::ClearBuffer(std::shared_ptr<FrameBuffer>& buffer, const Math::Col
 	mContext->ClearDepthStencilView(buffer->mDepthBuffer.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void Renderer::ClearBuffer(std::shared_ptr<Target>& target, const Math::Color& color) const
+void Renderer::ClearBuffer(std::shared_ptr<RenderTarget>& target, const Math::Color& color) const
 {
 	mContext->ClearRenderTargetView(target->mRenderTarget.Get(), color);
 }
@@ -1202,7 +1017,7 @@ void Renderer::CopyBuffer(std::shared_ptr<FrameBuffer>& src, std::shared_ptr<Fra
 {
 	if (!dst) { dst = mBackBuffer; }
 
-	if (Utility::ValidCopy(src->mColorTexture, dst->mColorTexture)) {
+	if (Util::ValidCopy(src->mColorTexture, dst->mColorTexture)) {
 		mContext->CopyResource(dst->mColorTexture.Get(), src->mColorTexture.Get());
 	}
 }
@@ -1210,8 +1025,8 @@ void Renderer::CopyBuffer(std::shared_ptr<FrameBuffer>& src, std::shared_ptr<Fra
 void Renderer::UnbindResources(uint32_t numViews, uint32_t startSlot) const
 {
 	if (numViews > 0) {
-		std::vector<ID3D11ShaderResourceView*> nullsrvs(numViews);
-		mContext->PSSetShaderResources(startSlot, numViews, &nullsrvs[0]);
+		std::vector<ID3D11ShaderResourceView*> srvs(numViews);
+		mContext->PSSetShaderResources(startSlot, numViews, &srvs[0]);
 	}
 	else {
 		mContext->PSSetShaderResources(startSlot, 0, nullptr);
@@ -1221,8 +1036,8 @@ void Renderer::UnbindResources(uint32_t numViews, uint32_t startSlot) const
 void Renderer::UnbindRenderTargets(uint32_t numViews) const
 {
 	if (numViews > 0) {
-		std::vector<ID3D11RenderTargetView*> nullrtvs(numViews);
-		mContext->OMSetRenderTargets(numViews, &nullrtvs[0], nullptr);
+		std::vector<ID3D11RenderTargetView*> rtvs(numViews);
+		mContext->OMSetRenderTargets(numViews, &rtvs[0], nullptr);
 	}
 	else {
 		mContext->OMSetRenderTargets(0, nullptr, nullptr);

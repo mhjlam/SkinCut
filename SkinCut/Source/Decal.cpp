@@ -1,8 +1,8 @@
 #include "Decal.hpp"
 
 #include "Texture.hpp"
-#include "Utility.hpp"
-#include "Structures.hpp"
+#include "Util.hpp"
+#include "Structs.hpp"
 
 
 using namespace SkinCut;

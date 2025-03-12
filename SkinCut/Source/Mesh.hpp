@@ -13,8 +13,8 @@
 #include <wrl/client.h>
 
 #include "Hash.hpp"
-#include "Structures.hpp"
-#include "Mathematics.hpp"
+#include "Structs.hpp"
+#include "Math.hpp"
 
 
 
@@ -27,11 +27,6 @@ namespace SkinCut
 
 	class Mesh
 	{
-	public: // constants
-		static const float cMaxEdgeLength;
-		static const float cInfluenceRadius;
-
-
 	public:
 		// mesh geometry / attributes
 		std::vector<uint32_t> mIndexes; // numfaces * 3
@@ -43,18 +38,18 @@ namespace SkinCut
 		std::vector<Edge*> mEdgeArray;
 		std::vector<Face*> mFaceArray;
 
-		std::unordered_set<Node*, NodeHash, NodeHash> mNodeTable; // buckets allows individual lookups to be fast
+		std::unordered_set<Node*, NodeHash, NodeHash> mNodeTable; // buckets allow individual lookups to be fast
 		std::unordered_set<Edge*, EdgeHash, EdgeHash> mEdgeTable;
 		std::unordered_set<Face*, FaceHash, FaceHash> mFaceTable;
 
 
 	public:
-		Mesh(const std::wstring& meshname);
+		Mesh(const std::wstring& meshName);
 		~Mesh();
 
-		void ParseMesh(const std::wstring& meshname, bool computeNormals = false);
-		void LoadMesh(const std::wstring& filename);
-		void SaveMesh(const std::wstring& filename);
+		void ParseMesh(const std::wstring& meshName, bool computeNormals = false);
+		void LoadMesh(const std::wstring& fileName);
+		void SaveMesh(const std::wstring& fileName);
 
 		void RebuildIndexes(); // extract triangle list
 
@@ -63,16 +58,16 @@ namespace SkinCut
 		bool RayIntersection(Math::Ray& ray); // any ray-face intersection
 		bool RayIntersection(Math::Ray& ray, Intersection& ix); // closest ray-face intersection
 
-		void Subdivide(Face*& face, SplitType splitmode, Math::Vector3& point); // subdivide face
+		void Subdivide(Face*& face, SplitType splitMode, Math::Vector3& point); // subdivide face
 
-		void FormCutline(Intersection& i0, Intersection& i1, std::list<Link>& cutline, Math::Quadrilateral& cutquad);
-		void FuseCutline(std::list<Link>& cutline, std::vector<Edge*>& cutedges);
-		void OpenCutLine(std::vector<Edge*>& edges, Math::Quadrilateral& cutquad, bool gutter = true);
+		void FormCutline(Intersection& i0, Intersection& i1, std::list<Link>& cutLine, Math::Quadrilateral& cutQuad);
+		void FuseCutline(std::list<Link>& cutLine, std::vector<Edge*>& cutEdges);
+		void OpenCutLine(std::vector<Edge*>& edges, Math::Quadrilateral& cutQuad, bool gutter = true);
 
 		void Neighbors(Face*& f, std::array<Face*, 3>& nbs);
 		void Neighbors(Face*& f, std::array<std::pair<Face*, Edge*>, 3>& nbs);
-		void ChainFaces(std::list<Link>& cutline, std::map<Link, std::vector<Face*>>& CF, float r);
-		void ChainFaces(std::list<Link>& cutline, std::map<Link, std::vector<Face*>>& CF0, std::map<Link, std::vector<Face*>>& CF1, float r0, float r1);
+		void ChainFaces(std::list<Link>& cutLine, std::map<Link, std::vector<Face*>>& chainFaces, float radius);
+		void ChainFaces(std::list<Link>& cutLine, std::map<Link, std::vector<Face*>>& chainFacesOuter, std::map<Link, std::vector<Face*>>& chainFacesInner, float radiusOuter, float radiusInner);
 
 
 
@@ -84,7 +79,7 @@ namespace SkinCut
 
 
 	private: // topology
-		void GenerateTopology(); // generate topology
+		void GenerateTopology();
 
 		uint32_t MakeVertex(Math::Vector3& p, Math::Vector2& x, Math::Vector3& n, Math::Vector4& t, Math::Vector3& b);
 		uint32_t MakeVertex(Vertex& v0, Vertex& v1);

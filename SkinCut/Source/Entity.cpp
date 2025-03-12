@@ -4,10 +4,10 @@
 #include <list>
 #include <unordered_map>
 
-#include "DirectXTK/Inc/DDSTextureLoader.h"
+#include <DirectXTK/Inc/DDSTextureLoader.h>
 
 #include "Mesh.hpp"
-#include "Utility.hpp"
+#include "Util.hpp"
 
 
 using Microsoft::WRL::ComPtr;
@@ -20,14 +20,14 @@ namespace SkinCut {
 }
 
 
-Entity::Entity(ComPtr<ID3D11Device>& device, Vector3 position, Vector2 rotation, 
+Entity::Entity(ComPtr<ID3D11Device>& device, Vector3 Position, Vector2 rotation, 
 	std::wstring meshPath, std::wstring colorPath, std::wstring normalPath, 
 	std::wstring specularPath, std::wstring discolorPath, std::wstring occlusionPath) 
 : mDevice(device)
 {
 	mTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-	mPosition = position;
+	mPosition = Position;
 	mRotation = rotation;
 
 	mMatrixWVP = Matrix::Identity();
@@ -44,7 +44,7 @@ Entity::Entity(ComPtr<ID3D11Device>& device, Vector3 position, Vector2 rotation,
 	mColorWire = Color(0, 0, 0, 1);
 	mColorSolid = Color(0, 0, 0, 1);
 
-	mLoadInfo.position = position;
+	mLoadInfo.Position = Position;
 	mLoadInfo.rotation = rotation;
 	mLoadInfo.meshPath = meshPath;
 	mLoadInfo.colorPath = colorPath;
@@ -85,11 +85,11 @@ void Entity::LoadResources(EntityLoadInfo li)
 	}
 
 	// load texture maps
-	mColorMap = Utility::LoadTexture(mDevice, li.colorPath);
-	mNormalMap = Utility::LoadTexture(mDevice, li.normalPath);
-	mSpecularMap = Utility::LoadTexture(mDevice, li.specularPath);
-	mDiscolorMap = Utility::LoadTexture(mDevice, li.discolorPath);
-	mOcclusionMap = Utility::LoadTexture(mDevice, li.occlusionPath);
+	mColorMap = Util::LoadTexture(mDevice, li.colorPath);
+	mNormalMap = Util::LoadTexture(mDevice, li.normalPath);
+	mSpecularMap = Util::LoadTexture(mDevice, li.specularPath);
+	mDiscolorMap = Util::LoadTexture(mDevice, li.discolorPath);
+	mOcclusionMap = Util::LoadTexture(mDevice, li.occlusionPath);
 
 	RebuildBuffers(mMesh->mVertexes, mMesh->mIndexes);
 }

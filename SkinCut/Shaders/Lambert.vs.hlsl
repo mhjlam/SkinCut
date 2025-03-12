@@ -17,7 +17,7 @@ struct VSOUT
 
 cbuffer cb0 : register(b0)
 {
-	matrix WorldIT;
+	matrix WorldInverseTranspose;
 	matrix WorldViewProjection;
 };
 
@@ -27,6 +27,6 @@ VSOUT main(VSIN input)
 	VSOUT output;
 	output.position = mul(input.position, WorldViewProjection);
 	output.texcoord = input.texcoord;
-	output.normal = mul(float4(input.normal, 0), WorldIT).xyz;
+    output.normal = mul(float4(input.normal, 0), WorldInverseTranspose).xyz;
 	return output;
 }
