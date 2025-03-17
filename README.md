@@ -27,8 +27,8 @@ Open the provided Visual Studio solution to build the solution. Required librari
 
 * [DirectXTK](https://github.com/Microsoft/DirectXTK) (October 2024)
 * [DirectXTex](https://github.com/Microsoft/DirectXTex) (October 2024)
-* [Dear ImGui](https://github.com/ocornut/imgui) (v1.91.8)
-* [SimpleJSON](https://github.com/MJPA/SimpleJSON) (May 26, 2012)
+* [Dear ImGui](https://github.com/ocornut/imgui) (1.91.8)
+* [JSON for Modern C++](https://github.com/nlohmann/json) (3.11.3)
 
 ## Resource files
 
