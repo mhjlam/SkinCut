@@ -49,4 +49,5 @@ Press **_R_** to reload the scene at any time. In case of a critical runtime err
 The performance test described in the thesis can be executed by pressing **_T_**. Running times (in milliseconds) are written to the console window. This process can take several _minutes_ during which the application becomes unresponsive.
 
 ## License
-This source code is released under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) license.
+
+This software is licensed under the [CC BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
