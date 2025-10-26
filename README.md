@@ -1,4 +1,10 @@
-# Real-time Simulation and Visualization of Cutting Wounds
+# SkinCut
+
+Real-Time Simulation and Visualization of Cutting Wounds
+
+<p align="center">
+   <img src="media/skincut.gif" alt="Demo Animation" width="720"/>
+</p>
 
 C++ source code for master thesis **Real-time Simulation and Visualization of Cutting Wounds**.
 
