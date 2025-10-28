@@ -1,59 +1,294 @@
+<!-- markdownlint-disable MD033 -->
+
 # SkinCut
 
-Real-Time Simulation and Visualization of Cutting Wounds
+Real-Time Simulation and Visualization of Cutting Wounds  
+Maurits Lam  
+2025
 
 <p align="center">
-   <img src="media/skincut.gif" alt="Demo Animation" width="720"/>
+   <img src="Media/skincut.gif" alt="Demo Animation" width="720"/>
 </p>
 
-C++ source code for master thesis **Real-time Simulation and Visualization of Cutting Wounds**.
+**SkinCut** is a real-time wound simulation and visualization system that combines mesh cutting algorithms with advanced skin rendering techniques. Built on C++ and DirectX 11, it enables interactive creation of natural-looking cutting wounds through dynamic geometry generation and procedural texture synthesis for applications in computer graphics and medical simulation.
 
-**Author:** Maurits Lam </br>
-**Paper:** https://studenttheses.uu.nl/handle/20.500.12932/22174 </br>
-**Abstract:**
-> Many modern computer games and medical computer simulations feature skin injuries such as cuts and incisions. These two fields often approach this topic in different ways, where medical simulations commonly have a minimal visualization, and visualization in games is usually heavily based on artistic influence. As far as we know, no methods currently exist that combine mesh cutting simulation with skin visualization techniques in order to synthesize cutting wounds in real time. Previous works neglect to describe a complete remeshing scheme that is able to maintain the topology and parameterization of an input surface mesh during interactive creation of arbitrary cuts. Additionally, the appearance and synthesis of cutting wounds has not been sufficiently addressed. In this thesis, we explore the feasibility of constructing a damage model that simulates and visualizes natural-looking cutting wounds by generating new geometry and texture maps in real time. We present a cutting simulation approach to geometrically merge a cutting line into a mesh surface which is then subsequently opened, revealing interior wound geometry that is generated in situ. Likewise, a wound texture for surface injury visualization is generated during runtime. Finally, we propose an extension to subsurface scattering to locally discolor skin surface around a cutting area. Our approach is lightweight: using a mid-range desktop computer, cuts can be created in about 50 milliseconds on average, and a typical frame is rendered in about 2.5 milliseconds. We think that our approach can be attractive for increasing the realism of cutting wounds in real-time applications without heavy reliance on manual artistic input.
+This project implements the research presented in the master thesis [Real-time Simulation and Visualization of Cutting Wounds](https://studenttheses.uu.nl/handle/20.500.12932/22174) by Maurits Lam at Utrecht University.
 
-## Minimum system requirements
+The work addresses the gap between medical simulation (minimal visualization) and game graphics (artistic-driven) by developing a complete system that combines mesh cutting simulation with skin visualization techniques to synthesize cutting wounds in real time. The approach includes a novel remeshing scheme that maintains topology and parameterization during interactive cut creation, procedural wound appearance generation, and an extension to subsurface scattering for local skin discoloration.
 
-* Windows 8 or later (x86/x64)
-* 1 GHz processor (minimum for Windows 8)
-* 1 GB memory (minimum for Windows 8)
-* DirectX 11.0 compatible video card
+## Key Features
 
-Probably also works on Windows 7 with some minor modifications.
+- **Real-Time Mesh Cutting**: Interactive cutting line integration with topology-preserving remeshing.
+- **Procedural Wound Generation**: Dynamic geometry and texture creation for realistic wound appearance.
+- **Advanced Skin Rendering**: Physically-based skin shading reflectance model using [Kelemen/Szirmay-Kalos BRDF](http://www.hungrycat.hu/microfacet.pdf) and [Separable Subsurface Scattering](https://www.iryoku.com/separable-sss/downloads/Separable-Subsurface-Scattering.pdf) with local discoloration.
+- **Interactive Subdivision**: Adaptive mesh refinement with 3-split, 4-split, and 6-split modes.
+- **Performance Optimized**: ~50ms cutting operations, ~2.5ms frame rendering on mid-range hardware.
 
-## Build requirements
+## User Guide
 
-* Visual Studio 2015 or later
-* Windows SDK 8.0 or later
+### Running the Application
 
-Open the provided Visual Studio solution to build the solution. Required libraries are included.
+#### Basic Launch
 
-## Libraries used
+```cmd
+SkinCut.exe
+```
 
-* [DirectXTK](https://github.com/Microsoft/DirectXTK) (October 2024)
-* [DirectXTex](https://github.com/Microsoft/DirectXTex) (October 2024)
-* [Dear ImGui](https://github.com/ocornut/imgui) (1.91.8)
-* [JSON for Modern C++](https://github.com/nlohmann/json) (3.11.3)
+Launches with default configuration using the `Resources/` directory.
 
-## Resource files
+#### Custom Resource Path
 
-The application requires several resources to be present. By default it looks for a directory relative to the executable at `../../resources`. This directory and all subdirectories must remain intact. An alternate (relative or absolute) path to the `resources` directory can also be supplied as an argument to the program executable. Files `resources/config.json` and `resources/scene.json` can be modified to make changes to the configuration and scene definition, respectively.
+```cmd
+SkinCut.exe "C:\SkinCutResources\Project1\"
+```
 
-## Quick user guide
+Specify an alternate resource directory. Path can be relative or absolute.
 
-Hold **_Shift_** and click **_Left Mouse_** to select the start of a new cut. Repeat to select the end of the cut. Note that a cut must span at least two mesh faces. Pressing **_P_** cycles through the available pick modes (draw wound texture only, draw wound texture and merge cutting line, or draw wound texture and carve incision).
+The application expects the following resource directory structure:
 
-The camera can be operated with the mouse. Hold **_Left Mouse_** to rotate around the model. **_Right Mouse_** zooms in and out. **_Middle Mouse_** pans the camera.
+```text
+ResourceFolder/
+├── Config.json         # Rendering and interaction settings
+├── Scene.json          # Scene definition and lighting setup
+├── Models/             # 3D meshes and textures
+│   ├── Head.obj        # Default 3D model
+│   ├── Color.dds       # Base color texture
+│   ├── Normal.dds      # Normal map for surface detail
+│   ├── Specular.dds    # Specular reflection map
+│   ├── Discolor.dds    # Discoloration map for wound effects
+│   └── Occlusion.dds   # Ambient occlusion map
+├── Textures/           # Additional texture resources
+└── Fonts/              # UI font files
+```
 
-Rendering options can be modified by using the panels on the left side of the screen. Change the renderer with the drop down panel. For the primary shader, *Kelemen/Szirmay-Kalos*, several rendering features can be toggled on or off, its shading can be fine-tuned, and the intensity of the scene lights can be modified. The user interface itself can be toggled on and off by pressing **_F1_**.
+### User Interface
 
-Hold **_Ctrl_** and click **_Left Mouse_** to subdivide the face under the mouse cursor with the selected subdivision mode (3-split, 4-split, or 6-split). The current mode is shown in the bottom-right and can be cycled through with the **_S_** key.
+The SkinCut interface consists of several panels that can be toggled and configured:
 
-Press **_R_** to reload the scene at any time. In case of a critical runtime error, the application will ask to reload the scene as well. Note that this process may take a few seconds during which the application becomes unresponsive.
+![User Interface](Media/ui.png)
 
-The performance test described in the thesis can be executed by pressing **_T_**. Running times (in milliseconds) are written to the console window. This process can take several _minutes_ during which the application becomes unresponsive.
+- **Renderer Toggles**: Enable/disable wireframe, shadows, speculars, occlusion, etc.
+- **Light Controls**: Modify individual light intensities and colors.
+- **Material Parameters**: Adjust ambient, fresnel, roughness, bumpiness, specularity.
+- **Subsurface Scattering**: Control convolution and translucency for realistic skin rendering.
+- **Pick Mode**: Current cutting mode (paint/merge/carve).
+- **Split Mode**: Current splitting/subdivision mode (split3/split4/split6).
+
+### Controls
+
+#### Mouse Controls
+
+| Action                   | Description                                                              |
+|--------------------------|--------------------------------------------------------------------------|
+| **Left Mouse Drag**      | Hold and drag to orbit around model.                                     |
+| **Right Mouse Drag**     | Hold and drag to pan camera.                                             |
+| **Mouse Wheel Scroll**   | Scroll up and down to zoom in and out.                                   |
+| **Middle Mouse Click**   | Select cutting points on mesh surface between which a cut should appear. |
+
+The selection points for a cut should not be too close or too far apart from each other.
+
+Use **Shift + Middle Click** on a mesh face to see the mesh subdivision/splitting algorithm in action:
+
+- **Split3**: Divides triangle face into 3 smaller triangles.
+- **Split4**: Creates 4 triangles face with central vertex.
+- **Split6**: Subdivides the target triangle face and the its three neighbors in three.
+
+#### Keyboard Shortcuts
+
+| Key     | Function                                                                                  |
+|---------|-------------------------------------------------------------------------------------------|
+| **W**   | Switch between solid and wireframe rendering.                                             |
+| **R**   | Reload scene and reset all modifications, may take a few seconds.                         |
+| **T**   | Run 100-iteration performance test, outputs to console.                                   |
+| **F1**  | Hide/show all interface panels.                                                           |
+| **ESC** | Close the application.                                                                    |
+
+Press **T** to run comprehensive performance analysis:
+
+- Tests 100 cutting operations across different scenarios.
+- Measures each stage: line formation, patch generation, texture painting, mesh fusion, geometry opening.
+- Results output to console window (keep it open to see results).
+- Test duration: 2-5 minutes depending on model complexity.
+
+## Configuration
+
+SkinCut uses two **JSON** configuration files for scene setup and rendering parameters.
+
+- **Scene.json**: Camera position, 3D models, lighting setup, and material properties.
+- **Config.json**: Rendering settings, shader parameters, and interaction modes.
+
+### Scene Configuration
+
+Modify `Resources/Scene.json` for custom models and lighting:
+
+- **Camera position**: Set initial viewpoint.
+- **Model loading**: Specify 3D mesh and associated texture files.
+- **Light setup**: Configure multiple light sources with position and color.
+
+```json
+{
+  "camera": {
+     "position":     [0.0, 0.0, 5.0]
+  },
+  "models": [
+     {
+       "name":       "Head",
+       "position":   [0.0, 0.0, 0.0],
+       "rotation":   [0.0, 0.0, 0.0],
+       "mesh":       "Models/Head.obj",
+       "color":      "Models/Color.dds",
+       "normal":     "Models/Normal.dds",
+       "specular":   "Models/Specular.dds",
+       "discolor":   "Models/Discolor.dds",
+       "occlusion":  "Models/Occlusion.dds"
+     }
+  ],
+  "lights": [
+     {
+       "name":       "Front",
+       "position":   [0.0, 0.0, 5.0],
+       "color":      [0.5, 0.5, 0.5]
+     }
+  ]
+}
+```
+
+### Render Configuration
+
+Edit `Resources/Config.json` to modify default settings:
+
+```json
+{
+    "color":         true,
+    "bumps":         true,
+    "shadows":       true,
+    "speculars":     true,
+    "occlusion":     true,
+    "irradiance":    true,
+    "scattering":    true,
+    "transmittance": true,
+    
+    "ambient":       0.400,
+    "fresnel":       0.820,
+    "roughness":     0.500,
+    "bumpiness":     0.900,
+    "specularity":   1.880,
+    "convolution":   0.014,
+    "translucency":  0.830
+}
+```
+
+### Troubleshooting
+
+#### Launch Issues
+
+- **"Unable to locate resource directory"**: Ensure the Resources folder exists and contains required files.
+- **"Unable to locate config file"**: Verify `Config.json` exists in the resource directory.
+- **"Unable to locate scene file"**: Verify `Scene.json` exists in the resource directory.
+
+#### Cutting Not Working
+
+- Ensure both points are clicked directly on mesh faces.
+- Verify cut line spans at least two triangular faces.
+
+#### Application Crashes
+
+- Avoid placing cuts too closely to each other.
+- **Critical runtime errors**: Scene corruption, press R to reload (if possible).
+
+## Technical Implementation
+
+### Core Algorithms
+
+- **Mesh Cutting**: Topology-preserving cutting line integration with arbitrary cut support.
+- **Wound Generation**: Procedural geometry creation with in-situ texture synthesis.
+- **Subsurface Scattering**: Screen-space implementation with local discoloration support.
+- **DirectX 11 Rendering**: GPU-accelerated pipeline with HLSL shaders for advanced materials.
+
+### Performance
+
+- **Cutting Operations**: ~50ms average per cut.
+- **Frame Rendering**: ~2.5ms typical frame time.
+- **Memory Efficient**: Dynamic mesh updates without full reconstruction.
+- **Scalable**: Performance test framework included for validation.
+
+## Building
+
+### Dependencies
+
+- [DirectXTK](https://github.com/Microsoft/DirectXTK) (October 2024) - DirectX Toolkit for rendering utilities.
+- [DirectXTex](https://github.com/Microsoft/DirectXTex) (October 2024) - Texture loading and processing.
+- [Dear ImGui](https://github.com/ocornut/imgui) (1.91.8) - Immediate mode GUI.
+- [JSON for Modern C++](https://github.com/nlohmann/json) (3.11.3) - Configuration parsing.
+
+### Build Instructions
+
+#### Prerequisites
+
+- Visual Studio 2022 or later with C++ development tools
+- CMake 3.20 or later
+- vcpkg package manager
+
+#### Building with CMake
+
+```cmd
+# Clone and set up vcpkg (if not already installed)
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+.\bootstrap-vcpkg.bat
+.\vcpkg integrate install
+
+# Set environment variable (add to system PATH permanently)
+set VCPKG_ROOT=C:\path\to\vcpkg
+
+# Build SkinCut
+cd SkinCut
+.\Build.bat
+```
+
+The executable will be placed in `Bin/Release/`. For detailed build instructions, see [BUILDING.md](BUILDING.md).
+
+## File Structure
+
+```txt
+SkinCut/
+├── Bin/                   # Compiled executables (generated)
+├── Build/                 # CMake build files (generated)
+├── Resources/             # Runtime assets and configuration
+│   ├── Config.json           # Rendering and interaction settings
+│   ├── Scene.json            # Scene definition and lighting
+│   ├── Fonts/                # UI font resources
+│   ├── Models/               # 3D meshes and textures
+│   └── Textures/             # Additional texture resources
+├── Shaders/               # HLSL shader programs
+│   ├── Discolor.ps.hlsl      # Local skin discoloration
+│   ├── Main.*.hlsl           # Kelemen/Szirmay-Kalos skin shader
+│   ├── Subsurface.ps.hlsl    # Screen-space subsurface scattering
+│   └── Wound.ps.hlsl         # Procedural wound texture generation
+└── Source/                # C++ source code
+    ├── Application.*         # Main application framework
+    ├── Camera.*              # Camera controls and projection
+    ├── Cutter.*              # Mesh cutting and wound generation
+    ├── Entity.*              # 3D model and mesh management
+    ├── Interface.*           # ImGui user interface
+    ├── Math.*                # DirectXMath wrapper utilities
+    ├── Renderer.*            # DirectX 11 rendering pipeline
+    ├── Shader.*              # HLSL shader compilation and management
+    ├── Tester.*              # Performance benchmarking
+    └── Texture.*             # Texture loading and manipulation
+```
+
+## References
+
+1. Lam, M. H. J. (2017). *Real-time simulation and visualization of cutting wounds*. Master's thesis, Utrecht University. Available at: <https://studenttheses.uu.nl/handle/20.500.12932/22174>.
+2. Kelemen, C., & Szirmay‐Kalos, L. (2001). A microfacet based coupled specular‐matte BRDF model with importance sampling. *Computer Graphics Forum*, 20(4), 25-34. Blackwell Publishers. Available at <http://www.hungrycat.hu/microfacet.pdf>.
+3. Jimenez, J., Sundstedt, V., & Gutierrez, D. (2009). Screen-space perceptual rendering of human skin. *ACM Transactions on Applied Perception*, 6(4), 1-15. Available at <https://www.iryoku.com/separable-sss/downloads/Separable-Subsurface-Scattering.pdf>.
+4. Microsoft Corporation. (2024). *DirectX 11 Programming Guide*. Microsoft Developer Documentation. Available at: <https://docs.microsoft.com/en-us/windows/win32/direct3d11>.
+5. Walbourn, C. (2024). *DirectX Tool Kit for DirectX 11*. Microsoft GitHub Repository. Available at: <https://github.com/Microsoft/DirectXTK>.
+6. Walbourn, C. (2024). *DirectXTex texture processing library*. Microsoft GitHub Repository. Available at: <https://github.com/Microsoft/DirectXTex>.
+7. Cornut, O. (2024). *Dear ImGui: Bloat-free Graphical User interface for C++ with minimal dependencies*. GitHub Repository. Available at: <https://github.com/ocornut/imgui>.
+8. Lohmann, N. (2024). *JSON for Modern C++*. GitHub Repository. Available at: <https://github.com/nlohmann/json>.
 
 ## License
 
-This software is licensed under the [CC BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
+This software is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html). See [COPYING](COPYING) for details.

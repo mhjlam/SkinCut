@@ -1,0 +1,51 @@
+{
+	"camera" : 
+	{
+		"position" : [ 0.0, 0.0, 5.0 ]
+	},
+
+	"models" :
+	[
+		{
+			"name"			: "Head",
+			"position"		: [ 0.0, 0.0, 0.0 ],
+			"rotation"		: [ 0.0, 0.0, 0.0 ],
+
+			"mesh"			: "Models/Head.obj",
+			"color"			: "Models/Color.dds",
+			"normal"		: "Models/Normal.dds",
+			"specular"		: "Models/Specular.dds",
+			"discolor"		: "Models/Discolor.dds",
+			"occlusion"		: "Models/Occlusion.dds"
+		}
+	],
+	
+	"lights" :
+	[
+		{
+			"name"     : "Front",
+			"position" : [ 0.0, 0.0, 5.0 ],
+			"color"    : [ 0.5, 0.5, 0.5 ]
+		},
+		{
+			"name"     : "Rear",
+			"position" : [ 180, 0.0, 5.0 ],
+			"color"    : [ 1.0, 1.0, 1.0 ]
+		},
+		{
+			"name"     : "Left",
+			"position" : [ -90, 0.0, 5.0 ],
+			"color"    : [ 0.0, 0.0, 0.0 ]
+		},
+		{
+			"name"     : "Right",
+			"position" : [ 90, 0.0, 5.0 ],
+			"color"    : [ 0.2, 0.2, 0.2 ]
+		},
+		{
+			"name"     : "Above",
+			"position" : [ 0.0, -90, 5.0 ],
+			"color"    : [ 0.0, 0.0, 0.0 ]
+		}
+	]
+}

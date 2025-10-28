@@ -1,0 +1,17 @@
+{
+  "name": "skincut",
+  "version": "1.0.0",
+  "description": "Real-Time Simulation and Visualization of Cutting Wounds",
+  "dependencies": [
+    "directxtex",
+    "directxtk",
+    {
+      "name": "imgui",
+      "features": [
+        "dx11-binding",
+        "win32-binding"
+      ]
+    },
+    "nlohmann-json"
+  ]
+}

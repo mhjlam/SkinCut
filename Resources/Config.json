@@ -1,0 +1,21 @@
+{
+	"wireframe"		: false,
+	"interface"		: true,
+
+	"color"			: true,
+	"bumps"			: true,
+	"shadows"		: true,
+	"speculars"		: true,
+	"occlusion"		: true,
+	"irradiance"	: true,
+	"scattering"	: true,
+	"transmittance"	: true,
+
+	"ambient"		: 0.400,
+	"fresnel"		: 0.820,
+	"roughness"		: 0.500,
+	"bumpiness"		: 0.900,
+	"specularity"	: 1.880,
+	"convolution"	: 0.014,
+	"translucency"	: 0.830
+}
