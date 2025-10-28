@@ -2,9 +2,10 @@
 
 # SkinCut
 
-Real-Time Simulation and Visualization of Cutting Wounds  
-Maurits Lam  
-2025
+**Real-Time Simulation and Visualization of Cutting Wounds**
+
+> Maurits Lam  
+> 2025
 
 <p align="center">
    <img src="Media/skincut.gif" alt="Demo Animation" width="720"/>
